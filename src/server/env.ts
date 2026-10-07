@@ -22,6 +22,24 @@ const schema = z.object({
   /** Sign in with Microsoft: a multi-tenant app registration in Entra ID. */
   MICROSOFT_CLIENT_ID: optional(z.string()),
   MICROSOFT_CLIENT_SECRET: optional(z.string()),
+  /**
+   * Connecting Google Workspace: our service account's JSON key, as is or
+   * base64 encoded. Customers trust its client id with domain-wide delegation.
+   */
+  GOOGLE_SERVICE_ACCOUNT_KEY: optional(z.string()),
+  /**
+   * Connecting Microsoft 365: a multi-tenant Entra app with the application
+   * permissions User.Read.All and GroupMember.Read.All. Falls back to the
+   * sign-in app above when not set.
+   */
+  MICROSOFT_DIRECTORY_CLIENT_ID: optional(z.string()),
+  MICROSOFT_DIRECTORY_CLIENT_SECRET: optional(z.string()),
+  /** Only for tests against stand-in servers. Leave unset. */
+  GOOGLE_TOKEN_URL: optional(z.string().url()),
+  GOOGLE_ADMIN_API: optional(z.string().url()),
+  GOOGLE_GMAIL_API: optional(z.string().url()),
+  MICROSOFT_LOGIN_URL: optional(z.string().url()),
+  MICROSOFT_GRAPH_API: optional(z.string().url()),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 });
 

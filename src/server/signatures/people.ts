@@ -31,6 +31,7 @@ export interface PersonInput {
   lastName?: string;
   title?: string;
   department?: string;
+  location?: string;
   phone?: string;
   mobile?: string;
   custom?: Record<string, string>;
@@ -55,6 +56,7 @@ function clean(input: PersonInput, customKeys: string[]) {
     lastName: clip(input.lastName),
     title: clip(input.title),
     department: clip(input.department),
+    location: clip(input.location),
     phone: clip(input.phone, 40),
     mobile: clip(input.mobile, 40),
     custom,
@@ -131,18 +133,27 @@ export function fieldKey(label: string): string {
   return words.map((w, i) => (i ? w[0].toUpperCase() + w.slice(1) : w)).join("").slice(0, 40);
 }
 
-export async function addCustomField(ctx: Ctx, label: string) {
+/**
+ * A new custom field. With a directory attribute, a directory sync fills
+ * it: "Schema.field" for a Google custom attribute, or
+ * "extensionAttribute1" to "extensionAttribute15" for Microsoft.
+ */
+export async function addCustomField(ctx: Ctx, label: string, sourceAttributeInput = "") {
   assertCan(ctx.actor, "manageDirectory");
   const clean = label.trim().replace(/\s+/g, " ");
   const key = fieldKey(clean);
   if (!clean || clean.length > 60 || !/^[a-z]/.test(key)) throw new DomainError("invalid", "Enter a name that starts with a letter, under 60 characters.", "label");
+  const sourceAttribute = sourceAttributeInput.trim() || null;
+  if (sourceAttribute && !/^[A-Za-z][\w]{0,63}(\.[A-Za-z][\w]{0,63})?$/.test(sourceAttribute)) {
+    throw new DomainError("invalid", "Enter the attribute like Employee.CostCentre or extensionAttribute3.", "sourceAttribute");
+  }
   return asTenant(
     ctx.organisationId,
     async (tx) => {
       if ((await tx.customField.count()) >= MAX_CUSTOM_FIELDS) throw new DomainError("conflict", `You can have up to ${MAX_CUSTOM_FIELDS} custom fields.`, "label");
       if (await tx.customField.findFirst({ where: { key } })) throw new DomainError("conflict", "There's already a field with that name.", "label");
-      const field = await tx.customField.create({ data: { organisationId: ctx.organisationId, key, label: clean } });
-      await audit(tx, ctx.organisationId, who(ctx.actor), "directory.field_added", { type: "CustomField", id: field.id }, { key, label: clean }, ctx.ipAddress);
+      const field = await tx.customField.create({ data: { organisationId: ctx.organisationId, key, label: clean, sourceAttribute } });
+      await audit(tx, ctx.organisationId, who(ctx.actor), "directory.field_added", { type: "CustomField", id: field.id }, { key, label: clean, sourceAttribute }, ctx.ipAddress);
       return field;
     },
     ctx.db,
@@ -261,6 +272,7 @@ export function toPersonData(p: PersonWithPhoto, origin: string): PersonData {
     email: p.email,
     title: p.title,
     department: p.department,
+    location: p.location,
     phone: p.phone,
     mobile: p.mobile,
     photo: imageRef(origin, p.photo),

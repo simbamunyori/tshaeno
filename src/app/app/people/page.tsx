@@ -74,6 +74,10 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
                     <span className="flex min-w-0 flex-1 flex-col">
                       <span className="truncate font-semibold text-ink">
                         {p.firstName} {p.lastName}
+                        {!p.active ? <span className="ml-2 rounded-full bg-surface-2 px-2 py-0.5 text-caption font-semibold text-ink-muted">Switched off</span> : null}
+                        {p.source === "GOOGLE" || p.source === "MICROSOFT" ? (
+                          <span className="ml-2 text-caption font-normal text-ink-muted">from {p.source === "GOOGLE" ? "Google" : "Microsoft"}</span>
+                        ) : null}
                       </span>
                       <span className="truncate text-callout text-ink-muted">
                         {[p.title, p.department].filter(Boolean).join(", ") || p.email}
@@ -100,7 +104,9 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
             <ImportForm />
           </Card>
           <Card>
-            <CardHeader title="Custom fields">Extra details for signatures, such as pronouns, a booking link or a licence number.</CardHeader>
+            <CardHeader title="Custom fields">
+              Extra details for signatures, such as pronouns, a booking link or a licence number. Link one to a directory attribute and every sync fills it in.
+            </CardHeader>
             {fields.length ? (
               <ul className="mb-5 flex flex-col divide-y divide-border">
                 {fields.map((f) => (
@@ -108,6 +114,7 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
                     <span className="flex flex-col">
                       <span className="font-semibold text-ink">{f.label}</span>
                       <code className="text-callout text-ink-muted">{`{{custom.${f.key}}}`}</code>
+                      {f.sourceAttribute ? <span className="text-callout text-ink-muted">Filled from the directory&apos;s {f.sourceAttribute}</span> : null}
                     </span>
                     <form action={removeFieldAction}>
                       <input type="hidden" name="id" value={f.id} />

@@ -1,6 +1,6 @@
 "use client";
 
-import { Contact, LayoutGrid, Palette, PenLine, ScrollText, Settings, ShieldCheck, UsersRound, Wrench } from "lucide-react";
+import { Contact, Gauge, LayoutGrid, Palette, PenLine, Plug, ScrollText, Settings, ShieldCheck, UsersRound, Wrench } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
@@ -10,6 +10,8 @@ export const NAV = [
   { href: "/app/signatures", label: "Signatures", icon: PenLine },
   { href: "/app/brand", label: "Brand kits", icon: Palette },
   { href: "/app/people", label: "People", icon: Contact },
+  { href: "/app/coverage", label: "Coverage", icon: Gauge },
+  { href: "/app/connections", label: "Connections", icon: Plug },
   { href: "/app/team", label: "Team", icon: UsersRound },
   { href: "/app/audit", label: "Audit log", icon: ScrollText },
   { href: "/app/settings", label: "Settings", icon: Settings, exact: true },

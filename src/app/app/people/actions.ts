@@ -5,7 +5,11 @@ import { redirect } from "next/navigation";
 import { requestContext } from "@/server/auth/next";
 import { DomainError } from "@/server/org/access";
 import { requireMember } from "@/server/org/context";
+import { kickDelivery } from "@/server/jobs/queue";
 import { addCustomField, importPeople, removeCustomField, removePerson, savePerson, setPersonPhoto, type ImportResult } from "@/server/signatures/people";
+
+/** Signatures may have changed: bring Gmail up to date. */
+const kick = async () => kickDelivery((await requireMember()).organisation.id);
 
 async function ctx() {
   const { organisation, actor } = await requireMember();
@@ -36,6 +40,7 @@ function personInput(form: FormData) {
     lastName: s(form, "lastName"),
     title: s(form, "title"),
     department: s(form, "department"),
+    location: s(form, "location"),
     phone: s(form, "phone"),
     mobile: s(form, "mobile"),
     custom,
@@ -53,6 +58,7 @@ export async function savePersonAction(_prev: PeopleState, form: FormData): Prom
     return failure(e, values);
   }
   revalidatePath("/app/people");
+  await kick();
   if (!id) redirect(`/app/people/${personId}?added=1`);
   return { ok: "Saved." };
 }
@@ -76,6 +82,7 @@ export async function photoAction(_prev: PeopleState, form: FormData): Promise<P
     return failure(e);
   }
   revalidatePath(`/app/people/${id}`);
+  await kick();
   return { ok: form.get("remove") === "1" ? "Photo removed." : "Photo saved." };
 }
 
@@ -86,6 +93,7 @@ export async function importAction(_prev: PeopleState, form: FormData): Promise<
   try {
     const imported = await importPeople(await ctx(), await file.text());
     revalidatePath("/app/people");
+    await kick();
     return { imported };
   } catch (e) {
     return failure(e);
@@ -94,7 +102,7 @@ export async function importAction(_prev: PeopleState, form: FormData): Promise<
 
 export async function addFieldAction(_prev: PeopleState, form: FormData): Promise<PeopleState> {
   try {
-    const f = await addCustomField(await ctx(), s(form, "label"));
+    const f = await addCustomField(await ctx(), s(form, "label"), s(form, "sourceAttribute"));
     revalidatePath("/app/people");
     return { ok: `Added. Use it in signatures as {{custom.${f.key}}}.` };
   } catch (e) {
