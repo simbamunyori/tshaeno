@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import type { IdentityProvider, Prisma, PrismaClient, Role, Session, SessionStage, SignInMethod, User } from "@prisma/client";
 import { setScope, type Tx } from "@/server/db";
+import { startTrial } from "@/server/billing/trial";
 import { audit as orgAudit } from "@/server/org/audit";
 import { burnPasswordCheck, hashPassword, passwordStrength, verifyPassword } from "./password";
 import { generateRecoveryCodes, hashRecoveryCode, looksLikeRecoveryCode } from "./recovery-codes";
@@ -169,6 +170,7 @@ export async function createOrganisation(tx: Tx, user: Pick<User, "id" | "name">
     : base;
   const org = await tx.organisation.create({ data: { name, slug } });
   await tx.membership.create({ data: { organisationId: org.id, userId: user.id, role: "OWNER" } });
+  await startTrial(tx, org);
   await audit(tx, org.id, user, "organisation.created", ctx, { name });
   return org;
 }

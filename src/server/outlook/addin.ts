@@ -4,7 +4,7 @@ import { asSystem, asTenant } from "@/server/db";
 import { escapeHtml } from "@/lib/signature/style";
 import { DomainError, assertCan, type Actor } from "@/server/org/access";
 import { audit } from "@/server/org/audit";
-import { OrgRenderer } from "@/server/delivery/renderer";
+import { markFirstSignature, OrgRenderer } from "@/server/delivery/renderer";
 import { PHOTO_SELECT } from "@/server/signatures/people";
 
 /**
@@ -299,6 +299,7 @@ export async function signatureForOutlook(req: AddinRequest, origin: string, db?
           create: { organisationId: addin.organisationId, personId: person.id, target: "OUTLOOK", state: out ? "APPLIED" : "SKIPPED", templateId: out?.templateId ?? null, hash: out?.hash ?? null, appliedAt: now, lastError: out ? null : "No signature rule covers them." },
           update: { state: out ? "APPLIED" : "SKIPPED", templateId: out?.templateId ?? null, hash: out?.hash ?? null, appliedAt: now, lastError: out ? null : "No signature rule covers them." },
         });
+        if (out) await markFirstSignature(tx, addin.organisationId, now);
       }
       return out ? { html: out.html } : { html: null, reason: "no-rule" };
     },

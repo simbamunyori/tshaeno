@@ -4,7 +4,7 @@ import { asSystem, asTenant } from "@/server/db";
 import { ProviderError } from "@/server/connections/http";
 import { realProviders, type Providers } from "@/server/connections/service";
 import { PHOTO_SELECT } from "@/server/signatures/people";
-import { OrgRenderer } from "./renderer";
+import { markFirstSignature, OrgRenderer } from "./renderer";
 
 /**
  * Pushing signatures into Gmail. Gmail keeps one signature per address,
@@ -125,7 +125,9 @@ export async function pushGmail(organisationId: string, personId: string, opts: 
     await record({ state: again ? "PENDING" : "FAILED", lastError: e.message });
     return again ? "retry" : "failed";
   }
-  await record({ state: "APPLIED", lastError: null, hash: prepared.hash, appliedAt: new Date() });
+  const now = new Date();
+  await record({ state: "APPLIED", lastError: null, hash: prepared.hash, appliedAt: now });
+  await asTenant(organisationId, (tx) => markFirstSignature(tx, organisationId, now), opts.db);
   return "applied";
 }
 

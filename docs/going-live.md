@@ -193,3 +193,20 @@ app, fill in `MICROSOFT_DIRECTORY_CLIENT_ID` and
 downloads their own manifest from Connections and deploys it from the
 Microsoft 365 admin centre. The add-in loads from this server, so it must
 be reachable over https at `APP_URL`.
+
+## 10. Taking payments
+
+Until DPO Pay is set up, customers choose a plan, get an invoice with your
+bank details and pay by transfer. When the money arrives, open the
+organisation in the admin area, find the invoice under Plan and billing and
+click Record payment. Their plan starts from that day.
+
+1. In `.env`, set `BANK_DETAILS`, `INVOICE_ISSUER` (your registered name and
+   address) and, if you charge VAT, `TAX_PERCENT` and `TAX_LABEL`.
+2. Set `SALES_EMAIL` to the address that should get Enterprise quote requests.
+3. When your DPO merchant account is approved, copy the company token and
+   service type into `DPO_COMPANY_TOKEN` and `DPO_SERVICE_TYPE`, then run
+   `docker compose up -d`. A Pay online button appears on every open invoice.
+   Payments are checked against DPO when the customer returns and again every
+   hour, so a closed browser tab doesn't lose a payment.
+4. Prices are in the admin area under Prices, per plan and currency.

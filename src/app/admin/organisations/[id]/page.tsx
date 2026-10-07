@@ -4,6 +4,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { DomainError, ROLE_LABEL } from "@/server/org/access";
 import { organisationDetail } from "@/server/platform/service";
 import { requireStaff } from "../../staff";
+import { BillingSection } from "./billing";
 import { StatusForm } from "./status-form";
 
 export default async function AdminOrganisation({ params }: { params: Promise<{ id: string }> }) {
@@ -21,6 +22,15 @@ export default async function AdminOrganisation({ params }: { params: Promise<{ 
           {org.status === "SUSPENDED" ? "Nobody in this organisation can use Tshaeno. Nothing has been deleted." : "Created " + when.format(org.createdAt) + "."}
         </CardHeader>
         <StatusForm id={org.id} suspended={org.status === "SUSPENDED"} />
+      </Card>
+      <BillingSection staff={staff} organisationId={org.id} timeZone={org.timeZone} />
+      <Card>
+        <CardHeader title="Getting started" />
+        <p className="text-callout text-ink">
+          {org.firstSignatureAt
+            ? `First signature live ${when.format(org.firstSignatureAt)}, ${Math.max(0, Math.round((org.firstSignatureAt.getTime() - org.createdAt.getTime()) / 60_000))} minutes after sign-up.`
+            : "No signature is live yet."}
+        </p>
       </Card>
       <Card>
         <CardHeader title="People" />
