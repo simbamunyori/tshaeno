@@ -3,7 +3,9 @@ import { asSystem } from "@/server/db";
 import { env } from "@/server/env";
 import { issueEmailToken, newLinkToken } from "@/server/auth/service";
 import { ROLE_LABEL } from "@/server/org/access";
-import { invitation, verifyEmail, type Rendered } from "./templates";
+import { formatMoney } from "@/lib/billing/plans";
+import { issueLinkToken } from "@/server/portal/service";
+import { invitation, invoiceIssued, paymentReceived, portalLink, quoteRequest, trialEnding, verifyEmail, type Rendered } from "./templates";
 import { send, type Message } from "./transport";
 
 export const MAX_ATTEMPTS = 5;
@@ -55,6 +57,32 @@ export async function render(db: PrismaClient, row: OutboundEmail): Promise<Rend
         url: `${base}/invite/${token}`,
       });
     }, db);
+  }
+  const longDate = (d: Date) => new Intl.DateTimeFormat("en-GB", { dateStyle: "long", timeZone: "UTC" }).format(d);
+  if (row.kind === "invoice" || row.kind === "payment_received") {
+    return asSystem(async (tx) => {
+      const inv = await tx.invoice.findUnique({ where: { id: payload.invoiceId }, include: { organisation: { select: { name: true } } } });
+      if (!inv || inv.status === "VOID" || (row.kind === "invoice" && inv.status === "PAID")) return null;
+      const input = { organisation: inv.organisation.name, number: inv.number, total: formatMoney(inv.totalMinor, inv.currency), url: `${base}/app/billing/invoices/${inv.id}` };
+      return row.kind === "invoice" ? invoiceIssued({ ...input, due: longDate(inv.dueAt), renewal: inv.kind === "RENEWAL" }) : paymentReceived(input);
+    }, db);
+  }
+  if (row.kind === "trial_ending") {
+    return asSystem(async (tx) => {
+      const sub = await tx.subscription.findUnique({ where: { organisationId: payload.organisationId }, include: { organisation: { select: { name: true } } } });
+      if (!sub || sub.status !== "TRIALING" || !sub.trialEndsAt) return null;
+      return trialEnding({ organisation: sub.organisation.name, ends: longDate(sub.trialEndsAt), url: `${base}/app/billing` });
+    }, db);
+  }
+  if (row.kind === "portal_link") {
+    return asSystem(async (tx) => {
+      const issued = await issueLinkToken(tx, payload.linkId);
+      if (!issued) return null;
+      return portalLink({ firstName: issued.firstName, organisation: issued.organisation, url: `${base}/me/link/${issued.token}` });
+    }, db);
+  }
+  if (row.kind === "quote_request") {
+    return quoteRequest({ organisation: payload.organisation, name: payload.name, email: payload.email, people: payload.people, note: payload.note ?? "", url: `${base}/admin/organisations/${payload.organisationId}` });
   }
   throw new Error(`Unknown email kind ${row.kind}.`);
 }

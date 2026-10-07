@@ -11,7 +11,11 @@ import { can } from "@/server/org/access";
 import { requireMember } from "@/server/org/context";
 import { origin } from "@/server/signatures/studio-data";
 import { liveRules, renderForPerson, resolveAssignments } from "@/server/signatures/templates";
-import { removePersonAction } from "../actions";
+import { ActionForm, ActionTextField } from "@/components/ui/action-form";
+import { SOCIAL_EXAMPLE, SOCIAL_NAME } from "@/lib/signature/socials";
+import { SOCIALS, kitData } from "@/server/signatures/brand";
+import { personSocials } from "@/server/signatures/people";
+import { removePersonAction, socialsAction } from "../actions";
 import { PersonForm, PhotoForm } from "../people-forms";
 import { CopyButton } from "./copy-button";
 
@@ -46,18 +50,30 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
       gmail: person.deliveries.find((d) => d.target === "GMAIL") ?? null,
       outlook: person.deliveries.find((d) => d.target === "OUTLOOK") ?? null,
     });
-    return { person, fields, departments, signatures, coverage };
+    const kits = await tx.brandKit.findMany({ select: { data: true } });
+    const own = personSocials(person);
+    const networks = SOCIALS.filter((n) => own[n] || kits.some((k) => kitData(k).socials.some((x) => x.network === n)));
+    return { person, fields, departments, signatures, coverage, networks, own };
   });
   if (!data) notFound();
-  const { person, fields, departments, signatures, coverage } = data;
+  const { person, fields, departments, signatures, coverage, networks, own } = data;
   const fromDirectory = person.source === "GOOGLE" ? "Google Workspace" : person.source === "MICROSOFT" ? "Microsoft 365" : null;
   const manage = can(actor, "manageDirectory");
 
   return (
     <div className="flex flex-col gap-8">
-      <PageHeader eyebrow={<Link href="/app/people" className="hover:text-ink">People</Link>} title={`${person.firstName} ${person.lastName}`.trim()} />
+      <PageHeader
+        eyebrow={
+          <Link href="/app/people" className="hover:text-ink">
+            People
+          </Link>
+        }
+        title={`${person.firstName} ${person.lastName}`.trim()}
+      />
       {added ? <Alert tone="positive">Added to the directory.</Alert> : null}
-      {!person.active ? <Alert tone="warning">Switched off, because they were suspended or removed in {fromDirectory ?? "the directory"}. They don&apos;t get a signature.</Alert> : null}
+      {!person.active ? (
+        <Alert tone="warning">Switched off, because they were suspended or removed in {fromDirectory ?? "the directory"}. They don&apos;t get a signature.</Alert>
+      ) : null}
 
       {person.active ? (
         <Card>
@@ -119,7 +135,10 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
           </p>
         ) : null}
         <PersonForm
-          person={{ ...person, custom: Object.fromEntries(Object.entries((person.custom ?? {}) as Record<string, unknown>).filter(([, v]) => typeof v === "string")) as Record<string, string> }}
+          person={{
+            ...person,
+            custom: Object.fromEntries(Object.entries((person.custom ?? {}) as Record<string, unknown>).filter(([, v]) => typeof v === "string")) as Record<string, string>,
+          }}
           customFields={fields}
           departments={departments}
           readOnly={!manage}
@@ -132,6 +151,19 @@ export default async function PersonPage({ params, searchParams }: { params: Pro
             <CardHeader title="Photo">Shown in signatures that include a photo.</CardHeader>
             <PhotoForm id={person.id} hasPhoto={!!person.photoAssetId} />
           </Card>
+          {networks.length ? (
+            <Card>
+              <CardHeader title="Their social links">Used in place of the company&apos;s link for the same network. Leave one empty to show the company&apos;s.</CardHeader>
+              <ActionForm action={socialsAction} submit="Save links">
+                <>
+                  <input type="hidden" name="id" value={person.id} />
+                  {networks.map((n) => (
+                    <ActionTextField key={n} id={`social_${n}`} label={SOCIAL_NAME[n]} type="url" inputMode="url" defaultValue={own[n] ?? ""} placeholder={SOCIAL_EXAMPLE[n]} />
+                  ))}
+                </>
+              </ActionForm>
+            </Card>
+          ) : null}
           <form action={removePersonAction}>
             <input type="hidden" name="id" value={person.id} />
             <button className="text-callout font-semibold text-negative hover:underline">Remove {person.firstName} from the directory</button>

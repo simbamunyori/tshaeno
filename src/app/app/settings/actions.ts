@@ -8,6 +8,8 @@ import { AuthError, unlinkIdentity } from "@/server/auth/service";
 import { DomainError } from "@/server/org/access";
 import { requireMember } from "@/server/org/context";
 import { renameOrganisation } from "@/server/org/members";
+import { setPortal } from "@/server/portal/service";
+import type { FormState } from "@/components/ui/action-form";
 
 export interface SettingsState {
   ok?: string;
@@ -46,4 +48,16 @@ export async function unlinkAction(form: FormData) {
     throw e;
   }
   revalidatePath("/app/settings/security");
+}
+
+export async function portalAction(_prev: FormState, form: FormData): Promise<FormState> {
+  const { organisation, actor } = await requireMember();
+  try {
+    await setPortal({ organisationId: organisation.id, actor, ipAddress: (await requestContext()).ipAddress }, { enabled: form.get("enabled") === "on", photo: form.get("photo") === "on" });
+  } catch (e) {
+    if (e instanceof DomainError) return { error: e.message };
+    throw e;
+  }
+  revalidatePath("/app/settings");
+  return { ok: "Saved." };
 }

@@ -26,7 +26,7 @@ export default async function SetupAuthenticatorPage() {
       <SetupForm
         eyebrow={session.user.lastLoginAt === null ? "Step 2 of 2" : undefined}
         completed={completed}
-        done={fromSettings && !completed ? "/app/settings/security" : "/app"}
+        done={fromSettings && !completed ? "/app/settings/security" : "/app/start"}
         qrSvg={qrSvg}
         secret={setup ? groupSecret(setup.secret) : ""}
         otpauthUri={setup?.uri ?? ""}

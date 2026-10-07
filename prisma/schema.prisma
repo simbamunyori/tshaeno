@@ -30,13 +30,19 @@ enum OrganisationStatus {
 }
 
 model Organisation {
-  id        String             @id @default(cuid())
-  name      String
-  slug      String             @unique
-  status    OrganisationStatus @default(ACTIVE)
-  timeZone  String             @default("Africa/Gaborone")
-  createdAt DateTime           @default(now())
-  updatedAt DateTime           @updatedAt
+  id               String             @id @default(cuid())
+  name             String
+  slug             String             @unique
+  status           OrganisationStatus @default(ACTIVE)
+  timeZone         String             @default("Africa/Gaborone")
+  /// When the first person got a signature through Gmail or Outlook, to
+  /// measure how long getting started takes.
+  firstSignatureAt DateTime?
+  /// Lets people update their own photo and social links.
+  portalEnabled    Boolean            @default(false)
+  portalPhoto      Boolean            @default(true)
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
 
   memberships  Membership[]
   invitations  Invitation[]
@@ -51,6 +57,9 @@ model Organisation {
   connections  DirectoryConnection[]
   deliveries   SignatureDelivery[]
   outlookAddin OutlookAddin?
+  subscription Subscription?
+  invoices     Invoice[]
+  portalLinks  PortalLink[]
 }
 
 enum Role {
@@ -328,6 +337,9 @@ model Person {
   /// Group names or addresses from the directory, for signature rules.
   groups         String[]     @default([])
   location       String       @default("")
+  /// The person's own social links, by network. Used where the brand kit
+  /// lists that network; set by an admin or by the person in the portal.
+  socials        Json         @default("{}")
   active         Boolean      @default(true)
   syncedAt       DateTime?
   createdAt      DateTime     @default(now())
@@ -337,6 +349,7 @@ model Person {
   photo        Asset?                @relation(fields: [photoAssetId], references: [id], onDelete: SetNull)
   assignments  SignatureAssignment[]
   deliveries   SignatureDelivery[]
+  portalLinks  PortalLink[]
 
   @@unique([organisationId, email])
   @@index([organisationId, department])
@@ -585,4 +598,172 @@ model OutlookAddin {
   createdAt      DateTime @default(now())
 
   organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+}
+
+// ─── Plans and billing (S4) ────────────────────────────────────────
+
+/// Price bands by number of people. Enterprise is priced by quote.
+enum PlanTier {
+  STARTER
+  GROWTH
+  BUSINESS
+  ENTERPRISE
+}
+
+enum Currency {
+  BWP
+  ZAR
+  USD
+}
+
+enum BillingInterval {
+  MONTHLY
+  ANNUAL
+}
+
+enum SubscriptionStatus {
+  /// Everything works, for a limited time, without paying.
+  TRIALING
+  /// Starter for free, with a small "Signature by Tshaeno" link.
+  FREE
+  ACTIVE
+  /// The period ended and the renewal isn't paid yet. Everything still works.
+  PAST_DUE
+}
+
+enum BilledBy {
+  DIRECT
+  /// Billed on a partner's invoice, such as Fourth Generation's (S5).
+  PARTNER
+}
+
+/// What a person pays per month in each band and currency. Managed by
+/// Tshaeno staff in the platform admin area; not tenant data.
+model PlanPrice {
+  id           String   @id @default(cuid())
+  tier         PlanTier
+  currency     Currency
+  /// Per person per month on monthly billing, in cents (thebe, cents).
+  monthlyMinor Int
+  /// Per person per month on annual billing, in cents.
+  annualMinor  Int
+  updatedAt    DateTime @updatedAt
+  updatedBy    String?
+
+  @@unique([tier, currency])
+}
+
+model Subscription {
+  id              String             @id @default(cuid())
+  organisationId  String             @unique
+  status          SubscriptionStatus @default(TRIALING)
+  billedBy        BilledBy           @default(DIRECT)
+  tier            PlanTier           @default(STARTER)
+  interval        BillingInterval    @default(MONTHLY)
+  currency        Currency           @default(USD)
+  /// People paid for in this period.
+  seats           Int                @default(0)
+  /// People to pay for from the next renewal, when the customer changed it.
+  renewalSeats    Int?
+  trialEndsAt     DateTime?
+  periodStart     DateTime?
+  periodEnd       DateTime?
+  /// A staff-agreed price per person per month, in cents, for quotes.
+  customMinor     Int?
+  /// Paid plans can keep the "Signature by Tshaeno" link if they like.
+  showBadge       Boolean            @default(false)
+  billingName     String             @default("")
+  billingEmail    String             @default("")
+  billingAddress  String             @default("")
+  taxNumber       String             @default("")
+  /// When we last emailed that the trial ends soon, so it is sent once.
+  trialReminderAt DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+}
+
+enum InvoiceStatus {
+  OPEN
+  PAID
+  VOID
+}
+
+enum InvoiceKind {
+  /// Starts a paid plan, or changes interval or currency.
+  NEW
+  RENEWAL
+  /// More people part way through a period, charged for the rest of it.
+  SEATS
+}
+
+enum PaymentMethod {
+  DPO
+  BANK_TRANSFER
+}
+
+model Invoice {
+  id             String          @id @default(cuid())
+  organisationId String
+  /// TSH-2026-00001, numbered across all organisations.
+  number         String          @unique
+  kind           InvoiceKind
+  status         InvoiceStatus   @default(OPEN)
+  method         PaymentMethod
+  currency       Currency
+  tier           PlanTier
+  interval       BillingInterval
+  seats          Int
+  /// Line items: [{ description, quantity, unitMinor, amountMinor }].
+  lines          Json
+  subtotalMinor  Int
+  taxMinor       Int             @default(0)
+  totalMinor     Int
+  periodStart    DateTime
+  periodEnd      DateTime
+  /// Who it is billed to, as it was when issued.
+  billTo         Json
+  issuedAt       DateTime        @default(now())
+  dueAt          DateTime
+  paidAt         DateTime?
+  /// DPO Pay's transaction token, while the invoice can be paid online.
+  dpoToken       String?         @unique
+  /// The payment reference: DPO's or the bank transfer's.
+  paymentRef     String?
+  voidedAt       DateTime?
+  createdAt      DateTime        @default(now())
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  @@index([organisationId, issuedAt])
+  @@index([status, method])
+}
+
+/// Hands out invoice numbers, one counter per year.
+model InvoiceCounter {
+  year Int @id
+  next Int @default(1)
+}
+
+// ─── Self-service portal (S4) ──────────────────────────────────────
+
+/// A sign-in link or session for one person in the directory, so they can
+/// update their own photo and social links without a Tshaeno account.
+model PortalLink {
+  id               String    @id @default(cuid())
+  organisationId   String
+  personId         String
+  /// SHA-256 of the emailed link token; null once used.
+  linkHash         String?   @unique
+  linkExpiresAt    DateTime
+  /// SHA-256 of the session cookie, once the link is used.
+  sessionHash      String?   @unique
+  sessionExpiresAt DateTime?
+  createdAt        DateTime  @default(now())
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  person       Person       @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@index([personId])
 }

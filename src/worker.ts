@@ -11,6 +11,7 @@ import { DELIVERY_QUEUE, DIRECTORY_QUEUE, MAIL_QUEUE, MAINTENANCE_QUEUE, PUSH_JO
 import { dueForSync, syncConnection } from "@/server/connections/service";
 import { gmailOrganisations, planGmail, pushGmail } from "@/server/delivery/gmail";
 import { tidyUp } from "@/server/jobs/maintenance";
+import { billingTick, realBillingDeps } from "@/server/billing/service";
 
 const HEARTBEAT_FILE = "/tmp/worker-heartbeat";
 
@@ -22,6 +23,8 @@ async function main() {
   await mail.upsertJobScheduler("mail-every-30s", { every: 30_000 }, { name: "drain", opts: { removeOnComplete: true, removeOnFail: 100 } });
   const maintenance = new Queue(MAINTENANCE_QUEUE, { connection });
   await maintenance.upsertJobScheduler("tidy-nightly", { pattern: "30 2 * * *" }, { name: "tidy", opts: { removeOnComplete: 10, removeOnFail: 100 } });
+  // Trials, renewals and payments started online but never confirmed.
+  await maintenance.upsertJobScheduler("billing-hourly", { pattern: "5 * * * *" }, { name: "billing", opts: { removeOnComplete: 10, removeOnFail: 100 } });
 
   const directory = new Queue(DIRECTORY_QUEUE, { connection });
   await directory.upsertJobScheduler("sync-due-15m", { every: 15 * 60_000 }, { name: "sync-due", opts: { removeOnComplete: 10, removeOnFail: 100 } });
@@ -38,7 +41,7 @@ async function main() {
 
   const workers = [
     new Worker(MAIL_QUEUE, async () => ({ sent: await drainOutbox(prisma) }), { connection, concurrency: 1 }),
-    new Worker(MAINTENANCE_QUEUE, async () => tidyUp(prisma), { connection, concurrency: 1 }),
+    new Worker(MAINTENANCE_QUEUE, async (job) => (job.name === "billing" ? billingTick(realBillingDeps()) : tidyUp(prisma)), { connection, concurrency: 1 }),
     new Worker(
       DIRECTORY_QUEUE,
       async (job) => {

@@ -34,7 +34,26 @@ const schema = z.object({
    */
   MICROSOFT_DIRECTORY_CLIENT_ID: optional(z.string()),
   MICROSOFT_DIRECTORY_CLIENT_SECRET: optional(z.string()),
+  /**
+   * DPO Pay, for paying invoices by card or mobile money. Until these are
+   * set, invoices are paid by bank transfer only.
+   */
+  DPO_COMPANY_TOKEN: optional(z.string()),
+  DPO_SERVICE_TYPE: optional(z.string()),
+  /** Bank details printed on invoices, one item per line. */
+  BANK_DETAILS: optional(z.string()),
+  /** The public website, where the "Signature by Tshaeno" link goes. */
+  WEBSITE_URL: z.string().url().default("https://tshaeno.com"),
+  /** Who issues invoices: name, address and tax number, one item per line. */
+  INVOICE_ISSUER: z.string().default("Tshaeno"),
+  /** Tax added to invoices, as a percentage, and what it is called. 0 adds none. */
+  TAX_PERCENT: z.coerce.number().min(0).max(50).default(0),
+  TAX_LABEL: z.string().default("VAT"),
+  /** Where Enterprise quote requests go. */
+  SALES_EMAIL: optional(z.string().email()),
   /** Only for tests against stand-in servers. Leave unset. */
+  DPO_API_URL: optional(z.string().url()),
+  DPO_PAY_URL: optional(z.string().url()),
   GOOGLE_TOKEN_URL: optional(z.string().url()),
   GOOGLE_ADMIN_API: optional(z.string().url()),
   GOOGLE_GMAIL_API: optional(z.string().url()),
