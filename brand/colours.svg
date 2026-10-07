@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 1396" font-family="Geist, system-ui, sans-serif">
+<style>.h{font-size:15px;font-weight:700;fill:#0B1F3A}.n{font-size:13px;font-weight:600;fill:#0B1F3A}.x{font-size:12px;fill:#5A6472;font-family:"Geist Mono",ui-monospace,monospace}</style>
+<rect width="980" height="1396" fill="#F6F7F9"/>
+<text x="40" y="56" font-size="28" font-weight="700" letter-spacing="-0.5" fill="#0B1F3A">Tshaeno colour</text>
+<text x="40" y="96" class="h">Navy</text>
+<rect x="40" y="112" width="132" height="88" rx="10" fill="#07121F"/>
+<text x="40" y="220" class="n">Navy 950</text><text x="40" y="238" class="x">#07121F</text>
+<rect x="188" y="112" width="132" height="88" rx="10" fill="#0B1F3A"/>
+<text x="188" y="220" class="n">Navy 900</text><text x="188" y="238" class="x">#0B1F3A</text>
+<rect x="336" y="112" width="132" height="88" rx="10" fill="#16335C"/>
+<text x="336" y="220" class="n">Navy 700</text><text x="336" y="238" class="x">#16335C</text>
+<text x="40" y="272" class="h">Teal</text>
+<rect x="40" y="288" width="132" height="88" rx="10" fill="#0B7F78"/>
+<text x="40" y="396" class="n">Teal 600</text><text x="40" y="414" class="x">#0B7F78</text>
+<rect x="188" y="288" width="132" height="88" rx="10" fill="#2EC4B6"/>
+<text x="188" y="396" class="n">Teal 400</text><text x="188" y="414" class="x">#2EC4B6</text>
+<rect x="336" y="288" width="132" height="88" rx="10" fill="#DDF4F1" stroke="#D5DAE1"/>
+<text x="336" y="396" class="n">Teal 100</text><text x="336" y="414" class="x">#DDF4F1</text>
+<text x="40" y="448" class="h">Signal</text>
+<rect x="40" y="464" width="132" height="88" rx="10" fill="#FF5B2E"/>
+<text x="40" y="572" class="n">Signal</text><text x="40" y="590" class="x">#FF5B2E</text>
+<text x="40" y="624" class="h">Grey</text>
+<rect x="40" y="640" width="132" height="88" rx="10" fill="#F6F7F9" stroke="#D5DAE1"/>
+<text x="40" y="748" class="n">Grey 50</text><text x="40" y="766" class="x">#F6F7F9</text>
+<rect x="188" y="640" width="132" height="88" rx="10" fill="#ECEEF2" stroke="#D5DAE1"/>
+<text x="188" y="748" class="n">Grey 100</text><text x="188" y="766" class="x">#ECEEF2</text>
+<rect x="336" y="640" width="132" height="88" rx="10" fill="#D5DAE1"/>
+<text x="336" y="748" class="n">Grey 200</text><text x="336" y="766" class="x">#D5DAE1</text>
+<rect x="484" y="640" width="132" height="88" rx="10" fill="#8A94A3"/>
+<text x="484" y="748" class="n">Grey 400</text><text x="484" y="766" class="x">#8A94A3</text>
+<rect x="632" y="640" width="132" height="88" rx="10" fill="#5A6472"/>
+<text x="632" y="748" class="n">Grey 600</text><text x="632" y="766" class="x">#5A6472</text>
+<rect x="780" y="640" width="132" height="88" rx="10" fill="#2B3240"/>
+<text x="780" y="748" class="n">Grey 800</text><text x="780" y="766" class="x">#2B3240</text>
+<text x="40" y="800" class="h">Semantic tokens</text>
+<rect x="40" y="816" width="440" height="540" rx="14" fill="#FFFFFF" stroke="#D5DAE1"/>
+<text x="64" y="852" class="h" style="fill:#0B1F3A">Light</text>
+<rect x="64" y="876" width="40" height="20" rx="5" fill="#F6F7F9" stroke="#5A6472" stroke-opacity=".35"/><text x="120" y="891" class="n" style="fill:#0B1F3A">surface-0</text><text x="340" y="891" class="x" style="fill:#5A6472">#F6F7F9</text>
+<rect x="64" y="906" width="40" height="20" rx="5" fill="#FFFFFF" stroke="#5A6472" stroke-opacity=".35"/><text x="120" y="921" class="n" style="fill:#0B1F3A">surface-1</text><text x="340" y="921" class="x" style="fill:#5A6472">#FFFFFF</text>
+<rect x="64" y="936" width="40" height="20" rx="5" fill="#ECEEF2" stroke="#5A6472" stroke-opacity=".35"/><text x="120" y="951" class="n" style="fill:#0B1F3A">surface-2</text><text x="340" y="951" class="x" style="fill:#5A6472">#ECEEF2</text>
+<rect x="64" y="966" width="40" height="20" rx="5" fill="#D5DAE1" stroke="#5A6472" stroke-opacity=".35"/><text x="120" y="981" class="n" style="fill:#0B1F3A">border</text><text x="340" y="981" class="x" style="fill:#5A6472">#D5DAE1</text>
+<rect x="64" y="996" width="40" height="20" rx="5" fill="#8A94A3" stroke="#5A6472" stroke-opacity=".35"/><text x="120" y="1011" class="n" style="fill:#0B1F3A">border-strong</text><text x="340" y="1011" class="x" style="fill:#5A6472">#8A94A3</text>
+<rect x="64" y="1026" width="40" height="20" rx="5" fill="#0B1F3A" stroke="#5A6472" stroke-opacity=".35"/><text x="120" y="1041" class="n" style="fill:#0B1F3A">ink</text><text x="340" y="1041" class="x" style="fill:#5A6472">#0B1F3A</text>
+<rect x="64" y="1056" width="40" height="20" rx="5" fill="#5A6472" stroke="#5A6472" stroke-opacity=".35"/><text x="120" y="1071" class="n" style="fill:#0B1F3A">ink-muted</text><text x="340" y="1071" class="x" style="fill:#5A6472">#5A6472</text>
+<rect x="64" y="1086" width="40" height="20" rx="5" fill="#0B7F78" stroke="#5A6472" stroke-opacity=".35"/><text x="120" y="1101" class="n" style="fill:#0B1F3A">brand</text><text x="340" y="1101" class="x" style="fill:#5A6472">#0B7F78</text>
+<rect x="64" y="1116" width="40" height="20" rx="5" fill="#FFFFFF" stroke="#5A6472" stroke-opacity=".35"/><text x="120" y="1131" class="n" style="fill:#0B1F3A">on-brand</text><text x="340" y="1131" class="x" style="fill:#5A6472">#FFFFFF</text>
+<rect x="64" y="1146" width="40" height="20" rx="5" fill="#DDF4F1" stroke="#5A6472" stroke-opacity=".35"/><text x="120" y="1161" class="n" style="fill:#0B1F3A">brand-soft</text><text x="340" y="1161" class="x" style="fill:#5A6472">#DDF4F1</text>
+<rect x="64" y="1176" width="40" height="20" rx="5" fill="#FF5B2E" stroke="#5A6472" stroke-opacity=".35"/><text x="120" y="1191" class="n" style="fill:#0B1F3A">accent</text><text x="340" y="1191" class="x" style="fill:#5A6472">#FF5B2E</text>
+<rect x="64" y="1206" width="40" height="20" rx="5" fill="#0B6F69" stroke="#5A6472" stroke-opacity=".35"/><text x="120" y="1221" class="n" style="fill:#0B1F3A">link</text><text x="340" y="1221" class="x" style="fill:#5A6472">#0B6F69</text>
+<rect x="64" y="1236" width="40" height="20" rx="5" fill="#1B7446" stroke="#5A6472" stroke-opacity=".35"/><text x="120" y="1251" class="n" style="fill:#0B1F3A">positive</text><text x="340" y="1251" class="x" style="fill:#5A6472">#1B7446</text>
+<rect x="64" y="1266" width="40" height="20" rx="5" fill="#B42318" stroke="#5A6472" stroke-opacity=".35"/><text x="120" y="1281" class="n" style="fill:#0B1F3A">negative</text><text x="340" y="1281" class="x" style="fill:#5A6472">#B42318</text>
+<rect x="64" y="1296" width="40" height="20" rx="5" fill="#8A5000" stroke="#5A6472" stroke-opacity=".35"/><text x="120" y="1311" class="n" style="fill:#0B1F3A">warning</text><text x="340" y="1311" class="x" style="fill:#5A6472">#8A5000</text>
+<rect x="64" y="1326" width="40" height="20" rx="5" fill="#0B7F78" stroke="#5A6472" stroke-opacity=".35"/><text x="120" y="1341" class="n" style="fill:#0B1F3A">focus</text><text x="340" y="1341" class="x" style="fill:#5A6472">#0B7F78</text>
+<rect x="500" y="816" width="440" height="540" rx="14" fill="#07121F" stroke="#D5DAE1"/>
+<text x="524" y="852" class="h" style="fill:#E8EEF5">Dark</text>
+<rect x="524" y="876" width="40" height="20" rx="5" fill="#07121F" stroke="#9AA8BA" stroke-opacity=".35"/><text x="580" y="891" class="n" style="fill:#E8EEF5">surface-0</text><text x="800" y="891" class="x" style="fill:#9AA8BA">#07121F</text>
+<rect x="524" y="906" width="40" height="20" rx="5" fill="#0D1B2E" stroke="#9AA8BA" stroke-opacity=".35"/><text x="580" y="921" class="n" style="fill:#E8EEF5">surface-1</text><text x="800" y="921" class="x" style="fill:#9AA8BA">#0D1B2E</text>
+<rect x="524" y="936" width="40" height="20" rx="5" fill="#142540" stroke="#9AA8BA" stroke-opacity=".35"/><text x="580" y="951" class="n" style="fill:#E8EEF5">surface-2</text><text x="800" y="951" class="x" style="fill:#9AA8BA">#142540</text>
+<rect x="524" y="966" width="40" height="20" rx="5" fill="#22344F" stroke="#9AA8BA" stroke-opacity=".35"/><text x="580" y="981" class="n" style="fill:#E8EEF5">border</text><text x="800" y="981" class="x" style="fill:#9AA8BA">#22344F</text>
+<rect x="524" y="996" width="40" height="20" rx="5" fill="#5D6E86" stroke="#9AA8BA" stroke-opacity=".35"/><text x="580" y="1011" class="n" style="fill:#E8EEF5">border-strong</text><text x="800" y="1011" class="x" style="fill:#9AA8BA">#5D6E86</text>
+<rect x="524" y="1026" width="40" height="20" rx="5" fill="#E8EEF5" stroke="#9AA8BA" stroke-opacity=".35"/><text x="580" y="1041" class="n" style="fill:#E8EEF5">ink</text><text x="800" y="1041" class="x" style="fill:#9AA8BA">#E8EEF5</text>
+<rect x="524" y="1056" width="40" height="20" rx="5" fill="#9AA8BA" stroke="#9AA8BA" stroke-opacity=".35"/><text x="580" y="1071" class="n" style="fill:#E8EEF5">ink-muted</text><text x="800" y="1071" class="x" style="fill:#9AA8BA">#9AA8BA</text>
+<rect x="524" y="1086" width="40" height="20" rx="5" fill="#2EC4B6" stroke="#9AA8BA" stroke-opacity=".35"/><text x="580" y="1101" class="n" style="fill:#E8EEF5">brand</text><text x="800" y="1101" class="x" style="fill:#9AA8BA">#2EC4B6</text>
+<rect x="524" y="1116" width="40" height="20" rx="5" fill="#04201D" stroke="#9AA8BA" stroke-opacity=".35"/><text x="580" y="1131" class="n" style="fill:#E8EEF5">on-brand</text><text x="800" y="1131" class="x" style="fill:#9AA8BA">#04201D</text>
+<rect x="524" y="1146" width="40" height="20" rx="5" fill="#0E3A3B" stroke="#9AA8BA" stroke-opacity=".35"/><text x="580" y="1161" class="n" style="fill:#E8EEF5">brand-soft</text><text x="800" y="1161" class="x" style="fill:#9AA8BA">#0E3A3B</text>
+<rect x="524" y="1176" width="40" height="20" rx="5" fill="#FF7A55" stroke="#9AA8BA" stroke-opacity=".35"/><text x="580" y="1191" class="n" style="fill:#E8EEF5">accent</text><text x="800" y="1191" class="x" style="fill:#9AA8BA">#FF7A55</text>
+<rect x="524" y="1206" width="40" height="20" rx="5" fill="#5FD6CB" stroke="#9AA8BA" stroke-opacity=".35"/><text x="580" y="1221" class="n" style="fill:#E8EEF5">link</text><text x="800" y="1221" class="x" style="fill:#9AA8BA">#5FD6CB</text>
+<rect x="524" y="1236" width="40" height="20" rx="5" fill="#5CC48D" stroke="#9AA8BA" stroke-opacity=".35"/><text x="580" y="1251" class="n" style="fill:#E8EEF5">positive</text><text x="800" y="1251" class="x" style="fill:#9AA8BA">#5CC48D</text>
+<rect x="524" y="1266" width="40" height="20" rx="5" fill="#F28A80" stroke="#9AA8BA" stroke-opacity=".35"/><text x="580" y="1281" class="n" style="fill:#E8EEF5">negative</text><text x="800" y="1281" class="x" style="fill:#9AA8BA">#F28A80</text>
+<rect x="524" y="1296" width="40" height="20" rx="5" fill="#E6AE4A" stroke="#9AA8BA" stroke-opacity=".35"/><text x="580" y="1311" class="n" style="fill:#E8EEF5">warning</text><text x="800" y="1311" class="x" style="fill:#9AA8BA">#E6AE4A</text>
+<rect x="524" y="1326" width="40" height="20" rx="5" fill="#5FD6CB" stroke="#9AA8BA" stroke-opacity=".35"/><text x="580" y="1341" class="n" style="fill:#E8EEF5">focus</text><text x="800" y="1341" class="x" style="fill:#9AA8BA">#5FD6CB</text>
+</svg>
