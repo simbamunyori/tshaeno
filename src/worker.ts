@@ -8,6 +8,7 @@ import { Queue, UnrecoverableError, Worker } from "bullmq";
 import { prisma } from "@/server/db";
 import { drainOutbox } from "@/server/mail/outbox";
 import { DELIVERY_QUEUE, DIRECTORY_QUEUE, MAIL_QUEUE, MAINTENANCE_QUEUE, PUSH_JOB, redisConnection } from "@/server/jobs/queue";
+import { campaignTick } from "@/server/campaigns/service";
 import { dueForSync, syncConnection } from "@/server/connections/service";
 import { gmailOrganisations, planGmail, pushGmail } from "@/server/delivery/gmail";
 import { tidyUp } from "@/server/jobs/maintenance";
@@ -32,6 +33,8 @@ async function main() {
   // Every night, push every Gmail signature again, which also puts back any
   // that someone changed by hand.
   await delivery.upsertJobScheduler("gmail-nightly", { pattern: "0 3 * * *" }, { name: "plan-all", opts: { removeOnComplete: 10, removeOnFail: 100 } });
+  // Campaign banners that started or ended: refresh those organisations' Gmail signatures.
+  await delivery.upsertJobScheduler("campaigns-5m", { every: 5 * 60_000 }, { name: "campaigns", opts: { removeOnComplete: 10, removeOnFail: 100 } });
 
   const plan = async (organisationId: string, force = false) => {
     const people = await planGmail(organisationId, { force });
@@ -65,6 +68,11 @@ async function main() {
           return;
         }
         if (job.name === "plan") return { queued: await plan(job.data.organisationId) };
+        if (job.name === "campaigns") {
+          const organisations = await campaignTick();
+          for (const organisationId of organisations) await plan(organisationId);
+          return { organisations: organisations.length };
+        }
         const final = job.attemptsMade + 1 >= (job.opts.attempts ?? 1);
         const outcome = await pushGmail(job.data.organisationId, job.data.personId, { final });
         // Throwing makes BullMQ try again later; the reason is already on the delivery row.

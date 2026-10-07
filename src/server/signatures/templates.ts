@@ -58,13 +58,16 @@ export function contentOf(kind: TemplateKind, stored: unknown): TemplateContent 
   return { kind, doc: stored as SignatureDoc };
 }
 
-export async function createTemplate(ctx: Ctx, input: { name: string; kind: TemplateKind; starterKey?: string | null; brandKitId?: string | null }) {
+export async function createTemplate(
+  ctx: Ctx,
+  input: { name: string; kind: TemplateKind; starterKey?: string | null; brandKitId?: string | null; doc?: SignatureDoc; draftedBy?: string },
+) {
   assertCan(ctx.actor, "manageTemplates");
   const name = cleanName(input.name);
   const s = input.starterKey ? starter(input.starterKey) : undefined;
   if (input.starterKey && !s) throw new DomainError("not-found", "That starter template doesn't exist.");
   const draft: Prisma.InputJsonValue =
-    input.kind === "HTML" ? { html: HTML_STARTER } : ((s ? reId(s.doc) : emptyDoc()) as unknown as Prisma.InputJsonValue);
+    input.kind === "HTML" ? { html: HTML_STARTER } : ((input.doc ? reId(parseDoc(input.doc)) : s ? reId(s.doc) : emptyDoc()) as unknown as Prisma.InputJsonValue);
   return asTenant(
     ctx.organisationId,
     async (tx) => {
@@ -72,7 +75,7 @@ export async function createTemplate(ctx: Ctx, input: { name: string; kind: Temp
       const t = await tx.signatureTemplate.create({
         data: { organisationId: ctx.organisationId, name, kind: input.kind, draft, starterKey: s?.key ?? null, brandKitId: kit?.id ?? null },
       });
-      await audit(tx, ctx.organisationId, who(ctx.actor), "template.created", { type: "SignatureTemplate", id: t.id }, { name, starter: s?.key ?? null }, ctx.ipAddress);
+      await audit(tx, ctx.organisationId, who(ctx.actor), "template.created", { type: "SignatureTemplate", id: t.id }, { name, starter: s?.key ?? null, ...(input.draftedBy ? { draftedBy: input.draftedBy } : {}) }, ctx.ipAddress);
       return t;
     },
     ctx.db,
