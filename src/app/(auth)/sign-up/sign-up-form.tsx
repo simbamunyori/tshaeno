@@ -10,7 +10,7 @@ import { TextField } from "@/components/ui/field";
 import { PasswordField } from "@/components/ui/password-field";
 import { signUpAction, type FormState } from "../actions";
 
-export function SignUpForm({ providers }: { providers: { google: boolean; microsoft: boolean } }) {
+export function SignUpForm({ providers }: { providers: { google: boolean; microsoft: boolean; fourthgen?: boolean } }) {
   const [state, action, pending] = useActionState<FormState, FormData>(signUpAction, {});
   const fe = state.fieldErrors ?? {};
   const anyProvider = providers.google || providers.microsoft;

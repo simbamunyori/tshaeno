@@ -17,7 +17,7 @@ export function SignInForm({
 }: {
   next: string;
   notice?: { tone: "info" | "negative" | "positive"; text: string };
-  providers: { google: boolean; microsoft: boolean };
+  providers: { google: boolean; microsoft: boolean; fourthgen: boolean };
 }) {
   const [state, action, pending] = useActionState<FormState, FormData>(signInAction, {});
   const message = state.error ? { tone: "negative" as const, text: state.error } : notice;

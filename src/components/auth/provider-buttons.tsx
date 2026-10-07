@@ -1,7 +1,7 @@
 "use client";
 
 import { startAuthentication } from "@simplewebauthn/browser";
-import { KeyRound } from "lucide-react";
+import { KeyRound, LayoutGrid } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -28,14 +28,14 @@ function MicrosoftIcon() {
   );
 }
 
-/** Google, Microsoft and passkey sign-in. Providers without credentials are left out. */
+/** Google, Microsoft, Fourth Generation and passkey sign-in. Providers without credentials are left out. */
 export function ProviderButtons({
   next,
   providers,
   passkey,
 }: {
   next: string;
-  providers: { google: boolean; microsoft: boolean };
+  providers: { google: boolean; microsoft: boolean; fourthgen?: boolean };
   passkey?: boolean;
 }) {
   const router = useRouter();
@@ -76,6 +76,14 @@ export function ProviderButtons({
           <a href={`/auth/microsoft${q}`}>
             <MicrosoftIcon />
             Continue with Microsoft
+          </a>
+        </Button>
+      ) : null}
+      {providers.fourthgen ? (
+        <Button asChild variant="secondary" size="lg" className="w-full">
+          <a href={`/auth/fourthgen${q}`}>
+            <LayoutGrid aria-hidden />
+            Continue with Fourth Generation
           </a>
         </Button>
       ) : null}

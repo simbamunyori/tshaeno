@@ -25,7 +25,7 @@ export default async function SecurityPage({ searchParams }: { searchParams: Pro
   const providers = enabledProviders();
   const day = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeZone: organisation.timeZone });
   const linked = new Set(identities.map((i) => i.provider));
-  const canLink = (["GOOGLE", "MICROSOFT"] as const).filter((p) => !linked.has(p) && providers[p === "GOOGLE" ? "google" : "microsoft"]);
+  const canLink = (["GOOGLE", "MICROSOFT", "FOURTHGEN"] as const).filter((p) => !linked.has(p) && providers[p.toLowerCase() as keyof typeof providers]);
 
   return (
     <div className="flex flex-col gap-8">
@@ -83,7 +83,7 @@ export default async function SecurityPage({ searchParams }: { searchParams: Pro
       </Card>
 
       <Card>
-        <CardHeader title="Google and Microsoft">Sign in with your work account instead of a password.</CardHeader>
+        <CardHeader title="Linked accounts">Sign in with your Google, Microsoft or Fourth Generation account instead of a password.</CardHeader>
         <ul className="flex flex-col divide-y divide-border">
           {identities.map((i) => (
             <li key={i.id} className="flex items-center gap-3 py-3">
