@@ -15,6 +15,7 @@ export type Permission =
   | "manageOrganisation"
   | "manageBilling"
   | "manageTemplates"
+  | "manageDirectory"
   | "viewAnalytics"
   | "viewAudit";
 
@@ -29,6 +30,8 @@ const ALLOWED: Record<Permission, Role[]> = {
   manageBilling: ["OWNER"],
   /** Signature templates, brand kits and rules (milestone S2 onward). */
   manageTemplates: ["OWNER", "ADMIN", "TEMPLATE_MANAGER"],
+  /** The people directory: details, photos, custom fields and imports. */
+  manageDirectory: ["OWNER", "ADMIN"],
   viewAnalytics: ["OWNER", "ADMIN", "ANALYST", "READ_ONLY"],
   viewAudit: ["OWNER", "ADMIN", "READ_ONLY"],
 };

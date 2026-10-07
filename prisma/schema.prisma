@@ -38,9 +38,16 @@ model Organisation {
   createdAt DateTime           @default(now())
   updatedAt DateTime           @updatedAt
 
-  memberships Membership[]
-  invitations Invitation[]
-  auditLogs   AuditLog[]
+  memberships  Membership[]
+  invitations  Invitation[]
+  auditLogs    AuditLog[]
+  people       Person[]
+  customFields CustomField[]
+  assets       Asset[]
+  brandKits    BrandKit[]
+  templates    SignatureTemplate[]
+  versions     SignatureVersion[]
+  assignments  SignatureAssignment[]
 }
 
 enum Role {
@@ -287,4 +294,172 @@ model OutboundEmail {
   createdAt DateTime            @default(now())
 
   @@index([status, sendAfter])
+}
+
+// ─── Signatures (milestone S2) ─────────────────────────────────────
+
+enum PersonSource {
+  MANUAL
+  CSV
+  GOOGLE
+  MICROSOFT
+}
+
+/// Someone who gets a signature. Not necessarily a Tshaeno user.
+model Person {
+  id             String       @id @default(cuid())
+  organisationId String
+  email          String
+  firstName      String
+  lastName       String       @default("")
+  title          String       @default("")
+  department     String       @default("")
+  phone          String       @default("")
+  mobile         String       @default("")
+  photoAssetId   String?
+  /// Values for the organisation's custom fields, by key.
+  custom         Json         @default("{}")
+  source         PersonSource @default(MANUAL)
+  active         Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organisation Organisation          @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  photo        Asset?                @relation(fields: [photoAssetId], references: [id], onDelete: SetNull)
+  assignments  SignatureAssignment[]
+
+  @@unique([organisationId, email])
+  @@index([organisationId, department])
+}
+
+/// An extra directory attribute, used in signatures as {{custom.key}}.
+model CustomField {
+  id             String   @id @default(cuid())
+  organisationId String
+  key            String
+  label          String
+  createdAt      DateTime @default(now())
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  @@unique([organisationId, key])
+}
+
+enum AssetKind {
+  LOGO
+  PHOTO
+  BANNER
+  IMAGE
+}
+
+/// An uploaded image. Served publicly at /i/a/<id>, because email
+/// clients fetch signature images without signing in; the id is random.
+model Asset {
+  id             String    @id
+  organisationId String
+  kind           AssetKind
+  contentType    String
+  width          Int
+  height         Int
+  size           Int
+  sha256         String
+  bytes          Bytes
+  createdAt      DateTime  @default(now())
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  people       Person[]
+  brandKits    BrandKit[]
+
+  @@index([organisationId, kind])
+}
+
+model BrandKit {
+  id             String   @id @default(cuid())
+  organisationId String
+  name           String
+  isDefault      Boolean  @default(false)
+  /// Colours, font, company details, disclaimer and social links.
+  data           Json
+  logoAssetId    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organisation Organisation        @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  logo         Asset?              @relation(fields: [logoAssetId], references: [id], onDelete: SetNull)
+  templates    SignatureTemplate[]
+
+  @@index([organisationId])
+}
+
+enum TemplateKind {
+  VISUAL
+  HTML
+}
+
+model SignatureTemplate {
+  id                 String       @id @default(cuid())
+  organisationId     String
+  name               String
+  kind               TemplateKind
+  brandKitId         String?
+  /// The working copy: a studio document, or { html }.
+  draft              Json
+  /// The starter it was made from, if any.
+  starterKey         String?
+  publishedVersionId String?      @unique
+  archivedAt         DateTime?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+
+  organisation Organisation          @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  brandKit     BrandKit?             @relation(fields: [brandKitId], references: [id], onDelete: SetNull)
+  versions     SignatureVersion[]    @relation("TemplateVersions")
+  published    SignatureVersion?     @relation("PublishedVersion", fields: [publishedVersionId], references: [id], onDelete: SetNull)
+  assignments  SignatureAssignment[]
+
+  @@index([organisationId])
+}
+
+/// A published snapshot. People's signatures use the latest one.
+model SignatureVersion {
+  id             String       @id @default(cuid())
+  organisationId String
+  templateId     String
+  number         Int
+  kind           TemplateKind
+  content        Json
+  createdById    String?
+  createdAt      DateTime     @default(now())
+
+  organisation Organisation       @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  template     SignatureTemplate  @relation("TemplateVersions", fields: [templateId], references: [id], onDelete: Cascade)
+  publishedOn  SignatureTemplate? @relation("PublishedVersion")
+
+  @@unique([templateId, number])
+}
+
+enum AssignmentScope {
+  EVERYONE
+  DEPARTMENT
+  PERSON
+}
+
+/// Gives a template to everyone, a department or one person, for new
+/// emails, replies, or both. The most specific rule wins.
+model SignatureAssignment {
+  id             String          @id @default(cuid())
+  organisationId String
+  templateId     String
+  scope          AssignmentScope
+  department     String?
+  personId       String?
+  forNew         Boolean         @default(true)
+  forReply       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+
+  organisation Organisation      @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  template     SignatureTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  person       Person?           @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@index([organisationId, templateId])
 }

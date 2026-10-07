@@ -31,17 +31,25 @@ export async function setScope(tx: Tx, scope: Scope): Promise<void> {
                               set_config('app.system', ${scope.system ? "on" : ""}, true)`;
 }
 
-async function run<T>(scope: Scope, fn: (tx: Tx) => Promise<T>, db: PrismaClient = prisma): Promise<T> {
-  return db.$transaction(async (tx) => {
-    await setScope(tx, scope);
-    return fn(tx);
-  });
+export interface TxOptions {
+  /** Milliseconds before the transaction is abandoned; Prisma's default is 5 seconds. */
+  timeout?: number;
+}
+
+async function run<T>(scope: Scope, fn: (tx: Tx) => Promise<T>, db: PrismaClient = prisma, opts?: TxOptions): Promise<T> {
+  return db.$transaction(
+    async (tx) => {
+      await setScope(tx, scope);
+      return fn(tx);
+    },
+    opts?.timeout ? { timeout: opts.timeout, maxWait: 10_000 } : undefined,
+  );
 }
 
 /** Work inside one organisation. Every tenant row read or written belongs to it. */
-export function asTenant<T>(organisationId: string, fn: (tx: Tx) => Promise<T>, db?: PrismaClient): Promise<T> {
+export function asTenant<T>(organisationId: string, fn: (tx: Tx) => Promise<T>, db?: PrismaClient, opts?: TxOptions): Promise<T> {
   if (!organisationId) throw new Error("asTenant needs an organisation id.");
-  return run({ orgId: organisationId }, fn, db);
+  return run({ orgId: organisationId }, fn, db, opts);
 }
 
 /** A signed-in person's own memberships and the organisations they belong to. */
