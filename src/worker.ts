@@ -3,11 +3,14 @@
  * docker-compose.yml) that runs BullMQ jobs. Several copies can run at
  * once; every job claims its rows in the database first.
  */
+import { writeFile } from "node:fs/promises";
 import { Queue, Worker } from "bullmq";
 import { prisma } from "@/server/db";
 import { drainOutbox } from "@/server/mail/outbox";
 import { MAIL_QUEUE, MAINTENANCE_QUEUE, redisConnection } from "@/server/jobs/queue";
 import { tidyUp } from "@/server/jobs/maintenance";
+
+const HEARTBEAT_FILE = "/tmp/worker-heartbeat";
 
 async function main() {
   const connection = redisConnection();
@@ -25,7 +28,26 @@ async function main() {
   for (const w of workers) w.on("failed", (job, err) => console.error(`Job ${job?.name} failed:`, err));
   console.info("Worker started.");
 
+  // The container's healthcheck reads this file's age. It is only touched
+  // while Redis answers, so a worker cut off from its queue reads unhealthy.
+  let beating = false;
+  const beat = async () => {
+    if (beating) return;
+    beating = true;
+    try {
+      await mail.getJobCounts("waiting");
+      await writeFile(HEARTBEAT_FILE, new Date().toISOString());
+    } catch (err) {
+      console.error("Heartbeat failed:", err);
+    } finally {
+      beating = false;
+    }
+  };
+  await beat();
+  const heartbeat = setInterval(beat, 10_000);
+
   const stop = async () => {
+    clearInterval(heartbeat);
     await Promise.all(workers.map((w) => w.close()));
     await Promise.all([mail.close(), maintenance.close()]);
     await prisma.$disconnect();
