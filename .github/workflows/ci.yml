@@ -58,6 +58,30 @@ jobs:
       - run: npm test
       - run: npm run build
 
+  rendering:
+    name: Signature rendering
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Install Chromium and WebKit
+        run: npx playwright install --with-deps chromium webkit
+      - name: Draw every starter, light and dark, desktop and phone
+        run: npx playwright test
+        env:
+          CI: true
+      - name: Keep the screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: signature-rendering
+          path: test-results/
+          retention-days: 14
+
   stack:
     name: Docker stack, backup and restore
     runs-on: ubuntu-latest

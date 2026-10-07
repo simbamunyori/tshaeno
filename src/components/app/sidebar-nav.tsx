@@ -1,12 +1,15 @@
 "use client";
 
-import { LayoutGrid, ScrollText, Settings, ShieldCheck, UsersRound, Wrench } from "lucide-react";
+import { Contact, LayoutGrid, Palette, PenLine, ScrollText, Settings, ShieldCheck, UsersRound, Wrench } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
 
 export const NAV = [
   { href: "/app", label: "Overview", icon: LayoutGrid, exact: true },
+  { href: "/app/signatures", label: "Signatures", icon: PenLine },
+  { href: "/app/brand", label: "Brand kits", icon: Palette },
+  { href: "/app/people", label: "People", icon: Contact },
   { href: "/app/team", label: "Team", icon: UsersRound },
   { href: "/app/audit", label: "Audit log", icon: ScrollText },
   { href: "/app/settings", label: "Settings", icon: Settings, exact: true },

@@ -12,8 +12,15 @@ export const metadata: Metadata = { title: "Overview" };
 export default async function OverviewPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const params = await searchParams;
   const { actor, organisation, session } = await requireMember();
-  const [members, invited] = await asTenant(organisation.id, (tx) =>
-    Promise.all([tx.membership.count({ where: { active: true } }), tx.invitation.count({ where: { acceptedAt: null, revokedAt: null } })]),
+  const [members, invited, kits, people, published, rules] = await asTenant(organisation.id, (tx) =>
+    Promise.all([
+      tx.membership.count({ where: { active: true } }),
+      tx.invitation.count({ where: { acceptedAt: null, revokedAt: null } }),
+      tx.brandKit.count({ where: { logoAssetId: { not: null } } }),
+      tx.person.count(),
+      tx.signatureTemplate.count({ where: { publishedVersionId: { not: null }, archivedAt: null } }),
+      tx.signatureAssignment.count(),
+    ]),
   );
   const passkeys = await prisma.passkey.count({ where: { userId: actor.userId } });
   const steps: { done: boolean; title: string; body: string; href?: string }[] = [
@@ -31,6 +38,10 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
       href: "/app/settings/security",
     },
     { done: Boolean(session.user.emailVerifiedAt), title: "Confirm your email", body: "So we can reach you about your account." },
+    { done: kits > 0, title: "Add your logo to the brand kit", body: "And your colours, font, disclaimer and social links.", href: "/app/brand" },
+    { done: people > 0, title: "Add your people", body: "By hand or from a spreadsheet, with the details their signatures show.", href: "/app/people" },
+    { done: published > 0, title: "Design and publish a signature", body: "Start from one of the industry templates or build your own.", href: "/app/signatures" },
+    { done: rules > 0, title: "Decide who gets it", body: "Everyone, a department or one person, for new emails and replies.", href: "/app/signatures" },
   ];
   return (
     <div className="flex flex-col gap-8">
@@ -57,7 +68,7 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
       </Card>
       <Card>
         <CardHeader title="Coming next">
-          The signature studio, then connecting Google Workspace and Microsoft 365 so every person&apos;s signature is applied for them.
+          Connecting Google Workspace and Microsoft 365, so every person&apos;s signature is applied for them and the directory stays in step.
         </CardHeader>
       </Card>
     </div>

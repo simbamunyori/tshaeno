@@ -13,6 +13,8 @@ const nextConfig: NextConfig = {
   // Loaded by Node at run time rather than bundled: BullMQ has optional
   // drivers and child-process code a bundler can't follow.
   serverExternalPackages: ["bullmq"],
+  // Logo, photo and banner uploads go through server actions.
+  experimental: { serverActions: { bodySizeLimit: "6mb" } },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

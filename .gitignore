@@ -43,3 +43,7 @@ next-env.d.ts
 .data/
 backups/
 /dist
+
+# rendering tests
+/test-results/
+/playwright-report/
