@@ -4,7 +4,7 @@ import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
 import type { VerifiedIdentity } from "./service";
 
 /**
- * Sign in with Google and Microsoft: OpenID Connect authorisation code
+ * Sign in with Google, Microsoft and the Fourth Generation console: OpenID Connect authorisation code
  * flow with PKCE, state and nonce. The id_token's signature, issuer,
  * audience, expiry and nonce are all checked before anything is trusted.
  */
@@ -15,6 +15,8 @@ export interface ProviderConfig {
   tokenUrl: string;
   jwksUrl: string;
   scope: string;
+  /** Set for providers whose endpoints come from their discovery document. */
+  issuer?: string;
   clientId: string;
   clientSecret: string;
   /** True when the token's issuer is one this provider uses. */
@@ -26,8 +28,39 @@ const MICROSOFT_ISSUER = /^https:\/\/login\.microsoftonline\.com\/([0-9a-f-]{36}
 
 export function providerConfig(
   slug: string,
-  creds: { GOOGLE_CLIENT_ID?: string; GOOGLE_CLIENT_SECRET?: string; MICROSOFT_CLIENT_ID?: string; MICROSOFT_CLIENT_SECRET?: string },
+  creds: {
+    GOOGLE_CLIENT_ID?: string;
+    GOOGLE_CLIENT_SECRET?: string;
+    MICROSOFT_CLIENT_ID?: string;
+    MICROSOFT_CLIENT_SECRET?: string;
+    FOURTHGEN_OIDC_ISSUER?: string;
+    FOURTHGEN_CLIENT_ID?: string;
+    FOURTHGEN_CLIENT_SECRET?: string;
+  },
 ): ProviderConfig | null {
+  if (slug === "fourthgen" && creds.FOURTHGEN_OIDC_ISSUER && creds.FOURTHGEN_CLIENT_ID && creds.FOURTHGEN_CLIENT_SECRET) {
+    const issuer = creds.FOURTHGEN_OIDC_ISSUER.replace(/\/$/, "");
+    return {
+      provider: "FOURTHGEN",
+      // Filled in from the console's discovery document; see discover().
+      authorizeUrl: "",
+      tokenUrl: "",
+      jwksUrl: "",
+      scope: "openid email profile",
+      issuer,
+      clientId: creds.FOURTHGEN_CLIENT_ID,
+      clientSecret: creds.FOURTHGEN_CLIENT_SECRET,
+      issuerOk: (iss) => iss.replace(/\/$/, "") === issuer,
+      identity: (p) => ({
+        provider: "FOURTHGEN",
+        subject: String(p.sub),
+        email: String(p.email ?? ""),
+        // The console checks its customers' addresses, so a verified one can be trusted.
+        emailVerified: p.email_verified === true,
+        name: String(p.name ?? ""),
+      }),
+    };
+  }
   if (slug === "google" && creds.GOOGLE_CLIENT_ID && creds.GOOGLE_CLIENT_SECRET) {
     return {
       provider: "GOOGLE",
@@ -74,6 +107,27 @@ export function providerConfig(
   return null;
 }
 
+const discoveries = new Map<string, { at: number; authorizeUrl: string; tokenUrl: string; jwksUrl: string }>();
+const DISCOVERY_MS = 60 * 60 * 1000;
+
+/** For a provider with an issuer, its endpoints from /.well-known/openid-configuration, kept for an hour. */
+export async function discover(config: ProviderConfig, fetchImpl: typeof fetch = fetch, now = Date.now()): Promise<ProviderConfig> {
+  if (!config.issuer) return config;
+  let hit = discoveries.get(config.issuer);
+  if (!hit || now - hit.at > DISCOVERY_MS) {
+    const res = await fetchImpl(`${config.issuer}/.well-known/openid-configuration`, { headers: { accept: "application/json" }, signal: AbortSignal.timeout(10_000) });
+    if (!res.ok) throw new Error(`Discovery for ${config.issuer} failed with ${res.status}.`);
+    const doc = (await res.json()) as { issuer?: string; authorization_endpoint?: string; token_endpoint?: string; jwks_uri?: string };
+    const https = (u?: string) => typeof u === "string" && (u.startsWith("https://") || u.startsWith("http://localhost") || u.startsWith("http://127.0.0.1"));
+    if (!doc.issuer || !config.issuerOk(doc.issuer, {}) || !https(doc.authorization_endpoint) || !https(doc.token_endpoint) || !https(doc.jwks_uri)) {
+      throw new Error(`Discovery for ${config.issuer} is incomplete or names another issuer.`);
+    }
+    hit = { at: now, authorizeUrl: doc.authorization_endpoint!, tokenUrl: doc.token_endpoint!, jwksUrl: doc.jwks_uri! };
+    discoveries.set(config.issuer, hit);
+  }
+  return { ...config, authorizeUrl: hit.authorizeUrl, tokenUrl: hit.tokenUrl, jwksUrl: hit.jwksUrl };
+}
+
 /** Holds the flow between leaving for the provider and coming back. */
 export const OIDC_COOKIE = "tshaeno_oidc";
 
@@ -117,6 +171,7 @@ export async function finishFlow(
   redirectUri: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<VerifiedIdentity> {
+  config = await discover(config, fetchImpl);
   const res = await fetchImpl(config.tokenUrl, {
     method: "POST",
     headers: { "content-type": "application/x-www-form-urlencoded", accept: "application/json" },

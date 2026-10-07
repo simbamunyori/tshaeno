@@ -17,7 +17,7 @@ export interface StaffMember {
   isPlatformAdmin: boolean;
 }
 
-function assertStaff(staff: StaffMember) {
+export function assertStaff(staff: StaffMember) {
   if (!staff.isPlatformAdmin) throw new DomainError("forbidden", "This area is for Tshaeno staff.");
 }
 
@@ -44,6 +44,7 @@ export async function organisationDetail(staff: StaffMember, organisationId: str
       include: {
         memberships: { where: { active: true }, include: { user: { select: { email: true, name: true, lastLoginAt: true } } }, orderBy: { createdAt: "asc" } },
         auditLogs: { orderBy: { createdAt: "desc" }, take: 50 },
+        partner: { select: { id: true, name: true } },
       },
     });
     if (!org) throw new DomainError("not-found", "No such organisation.");
@@ -67,7 +68,8 @@ export async function setOrganisationStatus(
     const org = await tx.organisation.findUnique({ where: { id: organisationId } });
     if (!org) throw new DomainError("not-found", "No such organisation.");
     if (org.status === status) return;
-    await tx.organisation.update({ where: { id: org.id }, data: { status } });
+    // A pause by staff is never the partner's to lift, and its reason stays internal.
+    await tx.organisation.update({ where: { id: org.id }, data: { status, suspendedByPartner: false, suspendedReason: null } });
     const action = status === "SUSPENDED" ? "organisation.suspended" : "organisation.resumed";
     await platformAudit(tx, staff, `platform.${action}`, org.id, { reason: why }, ipAddress);
     await setScope(tx, { orgId: org.id });

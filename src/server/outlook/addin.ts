@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
 import type { PrismaClient } from "@prisma/client";
+import { isLive } from "@/server/billing/live";
 import { asSystem, asTenant } from "@/server/db";
 import { escapeHtml } from "@/lib/signature/style";
 import { DomainError, assertCan, type Actor } from "@/server/org/access";
@@ -280,6 +281,7 @@ export async function signatureForOutlook(req: AddinRequest, origin: string, db?
   if (!isAddinKey(req.key)) return null;
   const addin = await asSystem((tx) => tx.outlookAddin.findUnique({ where: { key: req.key }, select: { organisationId: true } }), db);
   if (!addin) return null;
+  if (!(await asSystem((tx) => isLive(tx, addin.organisationId), db))) return { html: null, reason: "service-ended" };
   const email = req.email.trim().toLowerCase();
   return asTenant(
     addin.organisationId,

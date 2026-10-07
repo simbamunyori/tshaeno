@@ -161,14 +161,19 @@ export function cleanOrganisationName(input: string): string {
   return name;
 }
 
-/** A new organisation with this person as its owner. */
-export async function createOrganisation(tx: Tx, user: Pick<User, "id" | "name">, name: string, ctx: RequestContext) {
+/** The organisation's own row, with a unique slug. Callers add its people and plan. */
+export async function newOrganisationRow(tx: Tx, name: string, data: Omit<Prisma.OrganisationUncheckedCreateInput, "name" | "slug"> = {}) {
   await setScope(tx, { system: true });
   const base = slugify(name);
   const slug = (await tx.organisation.findUnique({ where: { slug: base }, select: { id: true } }))
     ? `${base}-${randomBytes(3).toString("hex")}`
     : base;
-  const org = await tx.organisation.create({ data: { name, slug } });
+  return tx.organisation.create({ data: { ...data, name, slug } });
+}
+
+/** A new organisation with this person as its owner. */
+export async function createOrganisation(tx: Tx, user: Pick<User, "id" | "name">, name: string, ctx: RequestContext) {
+  const org = await newOrganisationRow(tx, name);
   await tx.membership.create({ data: { organisationId: org.id, userId: user.id, role: "OWNER" } });
   await startTrial(tx, org);
   await audit(tx, org.id, user, "organisation.created", ctx, { name });
@@ -443,7 +448,7 @@ export interface VerifiedIdentity {
   name: string;
 }
 
-export const PROVIDER_LABEL: Record<IdentityProvider, string> = { GOOGLE: "Google", MICROSOFT: "Microsoft" };
+export const PROVIDER_LABEL: Record<IdentityProvider, string> = { GOOGLE: "Google", MICROSOFT: "Microsoft", FOURTHGEN: "Fourth Generation" };
 
 /**
  * Signs in with an identity the provider has just vouched for. A known
@@ -496,6 +501,7 @@ export async function signInWithIdentity(
       await audit(tx, await primaryOrganisationId(tx, user.id), user, "auth.identity_linked", ctx, { provider: identity.provider });
     }
     assertNotLocked(user, now);
+    if (identity.provider === "FOURTHGEN" && identity.emailVerified) await acceptWaitingInvitations(tx, user, ctx, now);
     if (user.totpEnabled) {
       const token = await createSession(tx, user.id, "CODE_PENDING", method, await primaryOrganisationId(tx, user.id), ctx, now);
       return { token, stage: "CODE_PENDING" as const, isNew };
@@ -661,6 +667,26 @@ export async function acceptInvitationAsNewUser(
     await audit(tx, invitation.organisationId, user, "member.joined", ctx, { invitationId: invitation.id, role: invitation.role });
     return { token: await createSession(tx, user.id, "SETUP_PENDING", "PASSWORD", invitation.organisationId, ctx, now) };
   });
+}
+
+/**
+ * Someone arriving from the Fourth Generation console, which vouches for
+ * their address, joins every organisation still waiting for them. This is
+ * how a customer who bought Tshaeno there gets straight in.
+ */
+async function acceptWaitingInvitations(tx: Tx, user: Pick<User, "id" | "name" | "email">, ctx: RequestContext, now: Date) {
+  await setScope(tx, { system: true });
+  const waiting = await tx.invitation.findMany({
+    where: { email: user.email, acceptedAt: null, revokedAt: null, expiresAt: { gt: now }, organisation: { status: "ACTIVE" } },
+    select: { id: true, organisationId: true, role: true },
+  });
+  for (const invitation of waiting) {
+    await setScope(tx, { system: true });
+    const claimed = await tx.invitation.updateMany({ where: { id: invitation.id, acceptedAt: null }, data: { acceptedAt: now, tokenHash: null } });
+    if (claimed.count !== 1) continue;
+    await joinOrganisation(tx, invitation, user.id);
+    await audit(tx, invitation.organisationId, user, "member.joined", ctx, { invitationId: invitation.id, role: invitation.role, via: "FOURTHGEN" });
+  }
 }
 
 /** Someone already signed in joins the organisation that invited them. */

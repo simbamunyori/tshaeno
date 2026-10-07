@@ -30,19 +30,27 @@ enum OrganisationStatus {
 }
 
 model Organisation {
-  id               String             @id @default(cuid())
-  name             String
-  slug             String             @unique
-  status           OrganisationStatus @default(ACTIVE)
-  timeZone         String             @default("Africa/Gaborone")
+  id                 String             @id @default(cuid())
+  name               String
+  slug               String             @unique
+  status             OrganisationStatus @default(ACTIVE)
+  timeZone           String             @default("Africa/Gaborone")
   /// When the first person got a signature through Gmail or Outlook, to
   /// measure how long getting started takes.
-  firstSignatureAt DateTime?
+  firstSignatureAt   DateTime?
   /// Lets people update their own photo and social links.
-  portalEnabled    Boolean            @default(false)
-  portalPhoto      Boolean            @default(true)
-  createdAt        DateTime           @default(now())
-  updatedAt        DateTime           @updatedAt
+  portalEnabled      Boolean            @default(false)
+  portalPhoto        Boolean            @default(true)
+  /// Set up by a partner, such as Fourth Generation, through the partner API.
+  partnerId          String?
+  /// The partner's own id for this customer.
+  partnerReference   String?
+  /// Who paused it: the partner can lift only its own pause.
+  suspendedByPartner Boolean            @default(false)
+  /// Shown to members while it is suspended.
+  suspendedReason    String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 
   memberships  Membership[]
   invitations  Invitation[]
@@ -60,6 +68,9 @@ model Organisation {
   subscription Subscription?
   invoices     Invoice[]
   portalLinks  PortalLink[]
+  partner      Partner?              @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+
+  @@unique([partnerId, partnerReference])
 }
 
 enum Role {
@@ -100,14 +111,17 @@ model Invitation {
   role           Role
   /// SHA-256 of the emailed link's token. Cleared once used.
   tokenHash      String?   @unique
-  invitedById    String
+  /// Empty when a partner set the organisation up; see invitedByLabel.
+  invitedById    String?
+  /// Who sent it, when that wasn't a member, such as a partner.
+  invitedByLabel String?
   expiresAt      DateTime
   acceptedAt     DateTime?
   revokedAt      DateTime?
   createdAt      DateTime  @default(now())
 
   organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Restrict)
-  invitedBy    Membership   @relation("invitedBy", fields: [invitedById], references: [id], onDelete: Restrict)
+  invitedBy    Membership?  @relation("invitedBy", fields: [invitedById], references: [id], onDelete: Restrict)
 
   @@index([organisationId])
 }
@@ -169,6 +183,8 @@ model User {
 enum IdentityProvider {
   GOOGLE
   MICROSOFT
+  /// The Fourth Generation console, for customers who buy through it.
+  FOURTHGEN
 }
 
 /// A Google or Microsoft account linked to a person.
@@ -219,6 +235,7 @@ enum SignInMethod {
   PASSWORD
   GOOGLE
   MICROSOFT
+  FOURTHGEN
   PASSKEY
 }
 
@@ -629,6 +646,9 @@ enum SubscriptionStatus {
   ACTIVE
   /// The period ended and the renewal isn't paid yet. Everything still works.
   PAST_DUE
+  /// Ended by the partner that bills it. People can still sign in and look,
+  /// but nothing is synced or applied any more.
+  CANCELLED
 }
 
 enum BilledBy {
@@ -766,4 +786,45 @@ model PortalLink {
   person       Person       @relation(fields: [personId], references: [id], onDelete: Cascade)
 
   @@index([personId])
+}
+
+/// A reseller, such as Fourth Generation Technologies, that sets up and
+/// bills organisations through the partner API. Not tenant data.
+model Partner {
+  id                       String   @id @default(cuid())
+  name                     String
+  keyId                    String   @unique
+  /// The signing secret, sealed with TOTP_ENCRYPTION_KEY.
+  secretSealed             String
+  allowedIps               String[] @default([])
+  wholesaleDiscountPercent Int      @default(0)
+  active                   Boolean  @default(true)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  organisations Organisation[]
+  requests      PartnerRequest[]
+}
+
+/// Every partner API call with a known key. Append-only; it also holds
+/// the first answer to each Idempotency-Key.
+model PartnerRequest {
+  id                   String   @id @default(cuid())
+  partnerId            String
+  idempotencyKey       String?
+  method               String
+  path                 String
+  bodySha256           String
+  ipAddress            String?
+  status               Int
+  response             Json?
+  /// The organisation the call was about. Not tenant data: this is the
+  /// partner's log, read by staff.
+  targetOrganisationId String?
+  createdAt            DateTime @default(now())
+
+  partner Partner @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+
+  @@unique([partnerId, idempotencyKey])
+  @@index([partnerId, createdAt])
 }

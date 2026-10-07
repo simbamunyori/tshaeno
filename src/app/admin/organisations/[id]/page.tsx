@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Card, CardHeader } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
@@ -19,8 +20,19 @@ export default async function AdminOrganisation({ params }: { params: Promise<{ 
       <PageHeader eyebrow={org.slug} title={org.name} />
       <Card>
         <CardHeader title={org.status === "SUSPENDED" ? "Suspended" : "Active"}>
-          {org.status === "SUSPENDED" ? "Nobody in this organisation can use Tshaeno. Nothing has been deleted." : "Created " + when.format(org.createdAt) + "."}
+          {org.status === "SUSPENDED"
+            ? `${org.suspendedByPartner ? `Paused by ${org.partner?.name ?? "its partner"}` : "Suspended by staff"}. Nobody in this organisation can sign in. Nothing has been deleted.`
+            : "Created " + when.format(org.createdAt) + "."}
         </CardHeader>
+        {org.partner ? (
+          <p className="mb-4 text-callout text-ink">
+            Set up by{" "}
+            <Link href={`/admin/partners/${org.partner.id}`} className="font-semibold text-link hover:underline">
+              {org.partner.name}
+            </Link>
+            , their reference <code className="font-mono">{org.partnerReference}</code>.
+          </p>
+        ) : null}
         <StatusForm id={org.id} suspended={org.status === "SUSPENDED"} />
       </Card>
       <BillingSection staff={staff} organisationId={org.id} timeZone={org.timeZone} />

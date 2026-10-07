@@ -210,3 +210,27 @@ click Record payment. Their plan starts from that day.
    Payments are checked against DPO when the customer returns and again every
    hour, so a closed browser tab doesn't lose a payment.
 4. Prices are in the admin area under Prices, per plan and currency.
+
+## 11. Selling through Fourth Generation (optional)
+
+**The partner API.** In the admin area, open **Partners**, enter
+`Fourth Generation Technologies` and click **Add partner**. Copy the key and
+secret and give them to Fourth Generation over a secure channel; the secret
+isn't shown again. On the partner's page, add the addresses their console
+calls from and their wholesale discount. Everything they need is in
+`docs/partner-api.md`.
+
+**Signing in from the console.** The Fourth Generation console is an OpenID
+Connect provider. In the console's admin area, register a new client:
+
+- Client type: **confidential**, with the **authorization code** flow and
+  **PKCE (S256)**.
+- Redirect URI: `https://YOUR-DOMAIN/auth/fourthgen/callback`
+- Scopes: `openid email profile`. The ID token must include `email` and
+  `email_verified`.
+
+Then put the console's issuer address (the one that serves
+`/.well-known/openid-configuration`) and the client's id and secret in
+`.env` as `FOURTHGEN_OIDC_ISSUER`, `FOURTHGEN_CLIENT_ID` and
+`FOURTHGEN_CLIENT_SECRET`, and run `docker compose up -d`. A **Continue with
+Fourth Generation** button appears on the sign-in page.

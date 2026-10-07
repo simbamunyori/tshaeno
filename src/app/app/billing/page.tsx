@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { prisma } from "@/server/db";
 import Link from "next/link";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -22,6 +23,7 @@ export default async function BillingPage() {
   const day = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeZone: organisation.timeZone });
   const paid = sub.status === "ACTIVE" || sub.status === "PAST_DUE";
   const partner = sub.billedBy === "PARTNER";
+  const partnerName = organisation.partnerId ? ((await prisma.partner.findUnique({ where: { id: organisation.partnerId }, select: { name: true } }))?.name ?? null) : null;
   const details = { billingName: sub.billingName, billingEmail: sub.billingEmail, billingAddress: sub.billingAddress, taxNumber: sub.taxNumber };
   const openInvoice = invoices.find((i) => i.status === "OPEN");
 
@@ -30,9 +32,11 @@ export default async function BillingPage() {
       <PageHeader eyebrow={organisation.name} title="Plan and billing" />
 
       <Card>
-        <CardHeader title={summary.label}>
+        <CardHeader title={partner && partnerName ? `${TIER_LABEL[sub.tier]}, through ${partnerName}` : summary.label}>
           {partner
-            ? "Your provider bills you for Tshaeno. To change your plan, ask them."
+            ? sub.status === "CANCELLED"
+              ? `Your plan through ${partnerName ?? "your provider"} has ended. You can still sign in and look, but Tshaeno no longer syncs your directory or applies signatures. To start again, ask ${partnerName ?? "them"}.`
+              : `${partnerName ?? "Your provider"} bills you for Tshaeno, for ${sub.seats} ${sub.seats === 1 ? "person" : "people"}. To change your plan, ask them.`
             : sub.status === "TRIALING"
               ? `Everything works during the trial. ${summary.trialDaysLeft === 0 ? "It ends today." : `${summary.trialDaysLeft} ${summary.trialDaysLeft === 1 ? "day" : "days"} left, until ${day.format(sub.trialEndsAt!)}.`} After that, up to ${FREE_PEOPLE} people keep their signatures for free, with a small Signature by Tshaeno link.`
               : sub.status === "FREE"

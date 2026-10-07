@@ -1,18 +1,25 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { currentSession, safeNext, SECURE } from "@/server/auth/next";
-import { authorizeUrl, newFlow, OIDC_COOKIE, providerConfig } from "@/server/auth/oidc";
+import { authorizeUrl, discover, newFlow, OIDC_COOKIE, providerConfig } from "@/server/auth/oidc";
 import { appOrigin, env } from "@/server/env";
 
 
 /**
- * Starts sign-in with Google or Microsoft, or linking one to the account
+ * Starts sign-in with Google, Microsoft or the Fourth Generation console, or linking one to the account
  * that is signed in (?intent=link). The flow's secrets wait in a
  * short-lived cookie for the callback.
  */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ provider: string }> }) {
   const { provider } = await params;
-  const config = providerConfig(provider, env());
-  if (!config) return NextResponse.redirect(new URL("/sign-in", appOrigin().origin));
+  const configured = providerConfig(provider, env());
+  if (!configured) return NextResponse.redirect(new URL("/sign-in", appOrigin().origin));
+  let config;
+  try {
+    config = await discover(configured);
+  } catch (err) {
+    console.warn(`Sign-in with ${provider} is unavailable:`, err);
+    return NextResponse.redirect(new URL("/sign-in?error=provider", appOrigin().origin));
+  }
   const intent = req.nextUrl.searchParams.get("intent") === "link" ? "link" : "sign-in";
   if (intent === "link" && (await currentSession())?.stage !== "ACTIVE") {
     return NextResponse.redirect(new URL("/sign-in?expired=1", appOrigin().origin));
