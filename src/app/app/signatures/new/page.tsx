@@ -12,6 +12,8 @@ import { renderSignature } from "@/lib/signature/render";
 import { INDUSTRIES, STARTERS } from "@/lib/signature/starters";
 import { kitOptions, origin } from "@/server/signatures/studio-data";
 import { createTemplateAction } from "../actions";
+import { aiAvailable } from "@/server/ai/claude";
+import { DraftWithClaude } from "./draft-with-claude";
 import { IndustryFilter } from "./industry-filter";
 
 export const metadata: Metadata = { title: "New signature" };
@@ -51,6 +53,16 @@ export default async function NewSignaturePage({ searchParams }: { searchParams:
           </button>
         </form>
       </div>
+
+      {aiAvailable() ? (
+        <Card>
+          <div className="mb-4 flex flex-col gap-1">
+            <h2 className="text-headline text-ink">Or describe it, and Claude drafts it</h2>
+            <p className="text-callout text-ink-muted">Say what you want in your own words. It opens in the studio as a draft.</p>
+          </div>
+          <DraftWithClaude kits={kits.map((k) => ({ id: k.id, name: k.name }))} />
+        </Card>
+      ) : null}
 
       <Card>
         <div className="mb-5 flex flex-col gap-3">

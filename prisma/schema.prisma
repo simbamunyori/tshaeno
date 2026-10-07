@@ -52,23 +52,25 @@ model Organisation {
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 
-  memberships  Membership[]
-  invitations  Invitation[]
-  auditLogs    AuditLog[]
-  people       Person[]
-  customFields CustomField[]
-  assets       Asset[]
-  brandKits    BrandKit[]
-  templates    SignatureTemplate[]
-  versions     SignatureVersion[]
-  assignments  SignatureAssignment[]
-  connections  DirectoryConnection[]
-  deliveries   SignatureDelivery[]
-  outlookAddin OutlookAddin?
-  subscription Subscription?
-  invoices     Invoice[]
-  portalLinks  PortalLink[]
-  partner      Partner?              @relation(fields: [partnerId], references: [id], onDelete: Restrict)
+  memberships    Membership[]
+  invitations    Invitation[]
+  auditLogs      AuditLog[]
+  people         Person[]
+  customFields   CustomField[]
+  assets         Asset[]
+  brandKits      BrandKit[]
+  templates      SignatureTemplate[]
+  versions       SignatureVersion[]
+  assignments    SignatureAssignment[]
+  connections    DirectoryConnection[]
+  deliveries     SignatureDelivery[]
+  outlookAddin   OutlookAddin?
+  subscription   Subscription?
+  invoices       Invoice[]
+  portalLinks    PortalLink[]
+  campaigns      Campaign[]
+  campaignClicks CampaignClick[]
+  partner        Partner?              @relation(fields: [partnerId], references: [id], onDelete: Restrict)
 
   @@unique([partnerId, partnerReference])
 }
@@ -413,6 +415,7 @@ model Asset {
   organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
   people       Person[]
   brandKits    BrandKit[]
+  campaigns    Campaign[]
 
   @@index([organisationId, kind])
 }
@@ -827,4 +830,61 @@ model PartnerRequest {
 
   @@unique([partnerId, idempotencyKey])
   @@index([partnerId, createdAt])
+}
+
+/// A banner added under signatures for a while, for the people and emails
+/// it targets, with its clicks counted.
+model Campaign {
+  id             String          @id @default(cuid())
+  organisationId String
+  name           String
+  /// The public part of its click links, so links don't reveal ids.
+  key            String          @unique
+  imageAssetId   String?
+  linkUrl        String
+  alt            String
+  /// Shown at this width in pixels; the height follows the image.
+  width          Int             @default(480)
+  startsAt       DateTime
+  endsAt         DateTime?
+  scope          AssignmentScope @default(EVERYONE)
+  department     String?
+  groupName      String?
+  location       String?
+  audience       Audience        @default(EXTERNAL)
+  forNew         Boolean         @default(true)
+  forReply       Boolean         @default(false)
+  pausedAt       DateTime?
+  /// When Gmail signatures were last refreshed for its start and its end,
+  /// so the scheduler does each once.
+  startPushedAt  DateTime?
+  endPushedAt    DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  organisation Organisation    @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  image        Asset?          @relation(fields: [imageAssetId], references: [id], onDelete: SetNull)
+  clicks       CampaignClick[]
+
+  @@index([organisationId])
+}
+
+/// One person clicking a campaign banner, at most once a day per campaign.
+/// Nothing about them is kept but a daily hash, so they can't be followed.
+model CampaignClick {
+  id             String   @id @default(cuid())
+  organisationId String
+  campaignId     String
+  /// Whose email the banner was in, when the link says so.
+  senderId       String?
+  /// sha256 of the visitor's address, browser and day, with a secret.
+  visitorHash    String
+  createdAt      DateTime @default(now())
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  campaign     Campaign     @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, visitorHash])
+  @@index([organisationId, createdAt])
+  @@index([campaignId, createdAt])
 }

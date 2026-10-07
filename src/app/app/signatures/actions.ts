@@ -7,6 +7,7 @@ import { requestContext } from "@/server/auth/next";
 import { DomainError } from "@/server/org/access";
 import { requireMember } from "@/server/org/context";
 import { kickDelivery } from "@/server/jobs/queue";
+import { draftTemplate } from "@/server/ai/signatures";
 import { uploadSignatureImage, type AssetOption } from "@/server/signatures/studio-data";
 import {
   addAssignment,
@@ -123,4 +124,16 @@ export async function removeAssignmentAction(form: FormData) {
   await removeAssignment(await ctx(), String(form.get("id")));
   revalidatePath(`/app/signatures/${String(form.get("templateId"))}/people`);
   await kick();
+}
+
+/** Claude drafts a template from a description; it opens in the studio. */
+export async function draftWithClaudeAction(_prev: ActionResult, form: FormData): Promise<ActionResult> {
+  let id: string;
+  try {
+    const t = await draftTemplate(await ctx(), { description: String(form.get("description") ?? ""), brandKitId: String(form.get("brandKitId") ?? "") || null });
+    id = t.id;
+  } catch (e) {
+    return failure(e);
+  }
+  redirect(`/app/signatures/${id}`);
 }
