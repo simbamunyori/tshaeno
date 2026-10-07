@@ -29,6 +29,8 @@ const schema = z.object({
   FOURTHGEN_OIDC_ISSUER: optional(z.string().url()),
   FOURTHGEN_CLIENT_ID: optional(z.string()),
   FOURTHGEN_CLIENT_SECRET: optional(z.string()),
+  /** Tshaeno's page in the Fourth Generation marketplace, linked from the website. */
+  FOURTHGEN_MARKETPLACE_URL: optional(z.string().url()),
   /**
    * Connecting Google Workspace: our service account's JSON key, as is or
    * base64 encoded. Customers trust its client id with domain-wide delegation.

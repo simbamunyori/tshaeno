@@ -246,3 +246,25 @@ Fourth Generation** button appears on the sign-in page.
 Claude only ever sees brand kits, templates and what admins type in, never
 anyone's details. `ANTHROPIC_MODEL` picks the model; the default is the most
 capable one.
+
+## 13. The website
+
+The website (home, templates, pricing, the comparison and the Fourth
+Generation page) is served by the same app, at `APP_URL`. Point your main
+domain there and set `WEBSITE_URL` to the same address, so the free plan's
+Signature by Tshaeno link lands on it.
+
+1. **Prices in the visitor's currency.** Pricing shows pula in Botswana,
+   rand in South Africa, Lesotho, Eswatini and Namibia, and dollars
+   elsewhere. It reads the country from a `CF-IPCountry` header, so put
+   Cloudflare in front of the server (or have your proxy set
+   `X-Country-Code`). Without one it falls back to the browser's language,
+   then dollars. Visitors can always switch currency on the page.
+2. **Enterprise quotes.** Set `SALES_EMAIL` and the Enterprise button
+   opens an email to it.
+3. **Fourth Generation.** Set `FOURTHGEN_MARKETPLACE_URL` to Tshaeno's
+   page in the marketplace and the Fourth Generation page links to it.
+4. Search engines get `/sitemap.xml` and `/robots.txt` automatically.
+
+A template picked on the website is remembered through sign-up and shown
+first on Get started.
