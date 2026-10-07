@@ -16,7 +16,9 @@ trap cleanup EXIT
 
 docker run -d --name "$NAME" -e POSTGRES_PASSWORD=restore -e POSTGRES_USER=tshaeno -e POSTGRES_DB=tshaeno postgres:16-alpine > /dev/null
 i=0
-until docker exec "$NAME" pg_isready -U tshaeno -d tshaeno > /dev/null 2>&1; do
+# Over TCP: the image's first-run setup server listens only on its socket,
+# so this passes once the real server is up and the database exists.
+until docker exec "$NAME" pg_isready -h 127.0.0.1 -U tshaeno -d tshaeno > /dev/null 2>&1; do
   i=$((i + 1)); [ "$i" -lt 60 ] || { echo "Restore database didn't start" >&2; exit 1; }; sleep 1
 done
 # The app role exists on the real server; make it here so grants restore cleanly.
