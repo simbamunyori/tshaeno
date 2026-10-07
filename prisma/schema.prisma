@@ -1,0 +1,290 @@
+// Tshaeno data model.
+//
+// Rules this schema encodes (see docs/architecture.md):
+// - Every business row belongs to exactly one Organisation (the tenant)
+//   and carries organisationId. PostgreSQL row-level security, set up in
+//   the migrations, decides which rows a query can see or write.
+// - People (User) and their sign-in methods are global: one person can
+//   belong to several organisations with one sign-in.
+// - AuditLog and PlatformAuditLog rows are never edited or deleted
+//   (database triggers).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  /// The application's own role, which row-level security applies to.
+  url       = env("DATABASE_URL")
+  /// The owner role, used only to apply migrations.
+  directUrl = env("MIGRATE_DATABASE_URL")
+}
+
+// ─── Tenancy ─────────────────────────────────────────────────────────
+
+enum OrganisationStatus {
+  ACTIVE
+  /// Nobody in the organisation can use the app; nothing is deleted.
+  SUSPENDED
+}
+
+model Organisation {
+  id        String             @id @default(cuid())
+  name      String
+  slug      String             @unique
+  status    OrganisationStatus @default(ACTIVE)
+  timeZone  String             @default("Africa/Gaborone")
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  memberships Membership[]
+  invitations Invitation[]
+  auditLogs   AuditLog[]
+}
+
+enum Role {
+  /// Everything, including members, billing and deleting the organisation.
+  OWNER
+  /// Everything except billing and the owners themselves.
+  ADMIN
+  /// Builds and assigns signature templates and brand kits.
+  TEMPLATE_MANAGER
+  /// Reads coverage and analytics.
+  ANALYST
+  /// Sees everything, changes nothing.
+  READ_ONLY
+}
+
+model Membership {
+  id             String   @id @default(cuid())
+  organisationId String
+  userId         String
+  role           Role
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organisation    Organisation @relation(fields: [organisationId], references: [id], onDelete: Restrict)
+  user            User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  sentInvitations Invitation[] @relation("invitedBy")
+
+  @@unique([organisationId, userId])
+  @@index([userId])
+}
+
+model Invitation {
+  id             String    @id @default(cuid())
+  organisationId String
+  /// Stored lower-cased.
+  email          String
+  role           Role
+  /// SHA-256 of the emailed link's token. Cleared once used.
+  tokenHash      String?   @unique
+  invitedById    String
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  revokedAt      DateTime?
+  createdAt      DateTime  @default(now())
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Restrict)
+  invitedBy    Membership   @relation("invitedBy", fields: [invitedById], references: [id], onDelete: Restrict)
+
+  @@index([organisationId])
+}
+
+/// One row per change made inside an organisation. Append-only.
+model AuditLog {
+  id             String   @id @default(cuid())
+  organisationId String
+  /// The person, when there is one. Platform staff acting on an
+  /// organisation are recorded here with actorLabel "Tshaeno staff: <name>".
+  actorUserId    String?
+  actorLabel     String
+  action         String
+  entityType     String
+  entityId       String
+  data           Json?
+  ipAddress      String?
+  createdAt      DateTime @default(now())
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Restrict)
+
+  @@index([organisationId, createdAt])
+}
+
+// ─── People and sign-in (global, not tenant data) ────────────────────
+
+model User {
+  id               String    @id @default(cuid())
+  /// Stored lower-cased.
+  email            String    @unique
+  name             String
+  /// scrypt hash. Null for people who only use Google, Microsoft or a passkey.
+  passwordHash     String?
+  emailVerifiedAt  DateTime?
+  /// SHA-256 of the newest "confirm your email" link; cleared once used.
+  emailTokenHash   String?   @unique
+  emailTokenSentAt DateTime?
+  /// AES-256-GCM encrypted TOTP secret; null until set up.
+  totpSecret       String?
+  totpEnabled      Boolean   @default(false)
+  /// Last accepted TOTP time step, so a code can never be used twice.
+  totpLastStep     Int?
+  failedAttempts   Int       @default(0)
+  lockedUntil      DateTime?
+  lastLoginAt      DateTime?
+  /// Tshaeno staff. Opens the platform admin area. Set by hand on the
+  /// server (see docs/going-live.md), never from the app.
+  isPlatformAdmin  Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  memberships   Membership[]
+  sessions      Session[]
+  recoveryCodes RecoveryCode[]
+  identities    Identity[]
+  passkeys      Passkey[]
+}
+
+enum IdentityProvider {
+  GOOGLE
+  MICROSOFT
+}
+
+/// A Google or Microsoft account linked to a person.
+model Identity {
+  id         String           @id @default(cuid())
+  userId     String
+  provider   IdentityProvider
+  /// The provider's stable id: "sub" for Google, "oid" + "tid" for Microsoft.
+  subject    String
+  email      String
+  createdAt  DateTime         @default(now())
+  lastUsedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, subject])
+  @@index([userId])
+}
+
+model Passkey {
+  id           String    @id @default(cuid())
+  userId       String
+  /// base64url credential id.
+  credentialId String    @unique
+  publicKey    Bytes
+  counter      Int       @default(0)
+  transports   String[]  @default([])
+  /// What the person called it, e.g. "MacBook" or "Phone".
+  name         String
+  createdAt    DateTime  @default(now())
+  lastUsedAt   DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+enum SessionStage {
+  /// First factor accepted; waiting for the authenticator code.
+  CODE_PENDING
+  /// Signed in with a password but no second step yet; must set one up.
+  SETUP_PENDING
+  /// Fully signed in.
+  ACTIVE
+}
+
+enum SignInMethod {
+  PASSWORD
+  GOOGLE
+  MICROSOFT
+  PASSKEY
+}
+
+/// A browser session. Only the SHA-256 hash of the cookie value is stored.
+model Session {
+  id                   String       @id @default(cuid())
+  tokenHash            String       @unique
+  userId               String
+  stage                SessionStage
+  method               SignInMethod
+  activeOrganisationId String?
+  expiresAt            DateTime
+  lastSeenAt           DateTime     @default(now())
+  revokedAt            DateTime?
+  ipAddress            String?
+  userAgent            String?
+  createdAt            DateTime     @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// Single-use backup codes for when the phone is lost. Stored hashed.
+model RecoveryCode {
+  id        String    @id @default(cuid())
+  userId    String
+  codeHash  String    @unique
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+/// A short-lived passkey challenge. The browser holds its id in a cookie.
+model AuthChallenge {
+  id        String   @id @default(cuid())
+  /// "passkey-register" or "passkey-sign-in".
+  purpose   String
+  challenge String
+  userId    String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([expiresAt])
+}
+
+/// What Tshaeno staff did in the platform admin area. Append-only.
+model PlatformAuditLog {
+  id                   String   @id @default(cuid())
+  actorUserId          String
+  actorLabel           String
+  action               String
+  targetOrganisationId String?
+  data                 Json?
+  ipAddress            String?
+  createdAt            DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+// ─── Email ───────────────────────────────────────────────────────────
+
+enum OutboundEmailStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+/// Email waiting to go out. Written in the same transaction as the change
+/// that causes it and sent by the worker after commit. Holds what to send,
+/// not the rendered message, so links are made at send time.
+model OutboundEmail {
+  id        String              @id @default(cuid())
+  kind      String
+  toAddress String
+  payload   Json
+  status    OutboundEmailStatus @default(PENDING)
+  attempts  Int                 @default(0)
+  lastError String?
+  sendAfter DateTime            @default(now())
+  sentAt    DateTime?
+  createdAt DateTime            @default(now())
+
+  @@index([status, sendAfter])
+}

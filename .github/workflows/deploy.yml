@@ -1,0 +1,86 @@
+name: Deploy
+
+# Runs after CI passes on main. Builds one image, tagged with the commit,
+# and rolls it out to staging and then production. Each server runs
+# scripts/deploy.sh, which backs up first and rolls back by itself if the
+# new version isn't healthy.
+#
+# Until the deploy secrets are set (docs/going-live.md, step 6), the
+# image is still built and published and the deploy steps say they were skipped.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+
+jobs:
+  image:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+      - id: tag
+        run: echo "tag=${IMAGE,,}:$(git rev-parse --short=12 HEAD)" >> "$GITHUB_OUTPUT"
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.tag.outputs.tag }}
+          build-args: APP_VERSION=${{ steps.tag.outputs.tag }}
+
+  staging:
+    needs: image
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Deploy
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          USER: ${{ secrets.DEPLOY_USER }}
+          KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          TAG: ${{ needs.image.outputs.tag }}
+        run: |
+          if [ -z "$HOST" ]; then echo "::notice::Staging deploy skipped: DEPLOY_HOST isn't set for the staging environment."; exit 0; fi
+          install -m 600 /dev/null key && printf '%s\n' "$KEY" > key
+          printf '%s\n' "$KNOWN_HOSTS" > known_hosts
+          ssh -i key -o UserKnownHostsFile=known_hosts "$USER@$HOST" "cd /opt/tshaeno && git pull --ff-only && ./scripts/deploy.sh '$TAG'"
+
+  production:
+    needs: [image, staging]
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Deploy
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+          USER: ${{ secrets.DEPLOY_USER }}
+          KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          TAG: ${{ needs.image.outputs.tag }}
+        run: |
+          if [ -z "$HOST" ]; then echo "::notice::Production deploy skipped: DEPLOY_HOST isn't set for the production environment."; exit 0; fi
+          install -m 600 /dev/null key && printf '%s\n' "$KEY" > key
+          printf '%s\n' "$KNOWN_HOSTS" > known_hosts
+          ssh -i key -o UserKnownHostsFile=known_hosts "$USER@$HOST" "cd /opt/tshaeno && git pull --ff-only && ./scripts/deploy.sh '$TAG'"
