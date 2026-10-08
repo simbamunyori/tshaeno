@@ -187,6 +187,8 @@ export interface PersonData {
   email: string;
   title: string;
   department: string;
+  /** The office or city. Older callers may leave it out. */
+  location?: string;
   phone: string;
   mobile: string;
   photo: ImageRef | null;

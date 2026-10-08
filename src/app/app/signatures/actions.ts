@@ -1,11 +1,12 @@
 "use server";
 
-import type { AssignmentScope, TemplateKind } from "@prisma/client";
+import type { AssignmentScope, Audience, TemplateKind } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requestContext } from "@/server/auth/next";
 import { DomainError } from "@/server/org/access";
 import { requireMember } from "@/server/org/context";
+import { kickDelivery } from "@/server/jobs/queue";
 import { uploadSignatureImage, type AssetOption } from "@/server/signatures/studio-data";
 import {
   addAssignment,
@@ -16,6 +17,9 @@ import {
   saveDraft,
   setArchived,
 } from "@/server/signatures/templates";
+
+/** Signatures may have changed: bring Gmail up to date. */
+const kick = async () => kickDelivery((await requireMember()).organisation.id);
 
 async function ctx() {
   const { organisation, actor } = await requireMember();
@@ -56,6 +60,7 @@ export async function publishAction(id: string, payload: { content: unknown; nam
     await saveDraft(c, id, payload);
     const v = await publishTemplate(c, id);
     revalidatePath("/app/signatures");
+    await kick();
     return { ok: `Published version ${v.number}.`, version: v.number };
   } catch (e) {
     return failure(e);
@@ -83,6 +88,7 @@ export async function archiveAction(form: FormData) {
   const id = String(form.get("id"));
   await setArchived(await ctx(), id, form.get("archived") === "1");
   revalidatePath("/app/signatures");
+  await kick();
   revalidatePath(`/app/signatures/${id}`);
 }
 
@@ -91,23 +97,30 @@ export async function addAssignmentAction(_prev: ActionResult, form: FormData): 
   const scope = String(form.get("scope")) as AssignmentScope;
   const usage = String(form.get("usage") ?? "both");
   try {
-    if (!["EVERYONE", "DEPARTMENT", "PERSON"].includes(scope)) throw new DomainError("invalid", "Choose who gets it.", "scope");
+    if (!["EVERYONE", "DEPARTMENT", "GROUP", "LOCATION", "PERSON"].includes(scope)) throw new DomainError("invalid", "Choose who gets it.", "scope");
+    const audience = String(form.get("audience") ?? "ANY") as Audience;
+    if (!["ANY", "INTERNAL", "EXTERNAL"].includes(audience)) throw new DomainError("invalid", "Choose who the emails go to.", "audience");
     await addAssignment(await ctx(), {
       templateId: id,
       scope,
       department: String(form.get("department") ?? ""),
+      groupName: String(form.get("groupName") ?? ""),
+      location: String(form.get("location") ?? ""),
       personId: String(form.get("personId") ?? ""),
       forNew: usage !== "reply",
       forReply: usage !== "new",
+      audience,
     });
   } catch (e) {
     return failure(e);
   }
   revalidatePath(`/app/signatures/${id}/people`);
+  await kick();
   return { ok: "Rule added." };
 }
 
 export async function removeAssignmentAction(form: FormData) {
   await removeAssignment(await ctx(), String(form.get("id")));
   revalidatePath(`/app/signatures/${String(form.get("templateId"))}/people`);
+  await kick();
 }

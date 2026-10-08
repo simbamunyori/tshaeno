@@ -7,13 +7,13 @@ import { PageHeader } from "@/components/ui/page-header";
 import { asTenant } from "@/server/db";
 import { can } from "@/server/org/access";
 import { requireMember } from "@/server/org/context";
+import { describeRule } from "@/lib/signature/rules";
 import { liveRules, resolveAssignments } from "@/server/signatures/templates";
 import { removeAssignmentAction } from "../../actions";
 import { AddRuleForm } from "./add-rule-form";
 
 export const metadata: Metadata = { title: "Who gets it" };
 
-const USAGE = (r: { forNew: boolean; forReply: boolean }) => (r.forNew && r.forReply ? "new emails and replies" : r.forNew ? "new emails" : "replies");
 
 export default async function WhoGetsItPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -24,7 +24,7 @@ export default async function WhoGetsItPage({ params }: { params: Promise<{ id: 
       include: { assignments: { orderBy: { createdAt: "asc" }, include: { person: { select: { firstName: true, lastName: true, email: true } } } } },
     });
     if (!template) return null;
-    const people = await tx.person.findMany({ where: { active: true }, select: { id: true, firstName: true, lastName: true, email: true, department: true }, orderBy: { firstName: "asc" } });
+    const people = await tx.person.findMany({ where: { active: true }, select: { id: true, firstName: true, lastName: true, email: true, department: true, location: true, groups: true }, orderBy: { firstName: "asc" } });
     const rules = await liveRules(tx);
     let newCount = 0;
     let replyCount = 0;
@@ -33,11 +33,19 @@ export default async function WhoGetsItPage({ params }: { params: Promise<{ id: 
       if (r.newEmail === id) newCount++;
       if (r.reply === id) replyCount++;
     }
-    const departments = [...new Set(people.map((p) => p.department.trim()).filter(Boolean))].sort();
-    return { template, people, departments, newCount, replyCount };
+    const distinct = (values: string[]) => [...new Set(values.map((v) => v.trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+    return {
+      template,
+      people,
+      departments: distinct(people.map((p) => p.department)),
+      groups: distinct(people.flatMap((p) => p.groups)),
+      locations: distinct(people.map((p) => p.location)),
+      newCount,
+      replyCount,
+    };
   });
   if (!data) notFound();
-  const { template, people, departments, newCount, replyCount } = data;
+  const { template, people, departments, groups, locations, newCount, replyCount } = data;
   const manage = can(actor, "manageTemplates");
   const live = !!template.publishedVersionId && !template.archivedAt;
 
@@ -55,7 +63,7 @@ export default async function WhoGetsItPage({ params }: { params: Promise<{ id: 
             Right now <strong>{newCount}</strong> of {people.length} {people.length === 1 ? "person uses" : "people use"} it for new emails and <strong>{replyCount}</strong> for replies.
           </p>
           <p className="mt-1 text-callout text-ink-muted">
-            When rules overlap, a rule for one person beats one for their department, which beats one for everyone. Among equals the newest wins. People can also pick any signature given to them.
+            When rules overlap, the most specific wins: one person, then a group, a department, an office, then everyone. A rule for colleagues or for people outside beats one for anyone, and among equals the newest wins. Counts are for emails to people outside.
           </p>
         </Card>
       )}
@@ -69,12 +77,8 @@ export default async function WhoGetsItPage({ params }: { params: Promise<{ id: 
             {template.assignments.map((a) => (
               <li key={a.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
                 <span className="text-body text-ink">
-                  {a.scope === "EVERYONE"
-                    ? "Everyone"
-                    : a.scope === "DEPARTMENT"
-                      ? `Everyone in ${a.department}`
-                      : `${a.person?.firstName ?? ""} ${a.person?.lastName ?? ""}`.trim() || a.person?.email}
-                  <span className="text-ink-muted">, for {USAGE(a)}</span>
+                  {describeRule(a, `${a.person?.firstName ?? ""} ${a.person?.lastName ?? ""}`.trim() || a.person?.email).who}
+                  <span className="text-ink-muted">, {describeRule(a).when}</span>
                 </span>
                 {manage ? (
                   <form action={removeAssignmentAction}>
@@ -95,6 +99,8 @@ export default async function WhoGetsItPage({ params }: { params: Promise<{ id: 
           <AddRuleForm
             templateId={template.id}
             departments={departments}
+            groups={groups}
+            locations={locations}
             people={people.map((p) => ({ value: p.id, label: `${p.firstName} ${p.lastName}`.trim() + ` (${p.email})` }))}
           />
         </Card>

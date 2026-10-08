@@ -13,6 +13,7 @@ export interface PersonValues {
   lastName: string;
   title: string;
   department: string;
+  location: string;
   phone: string;
   mobile: string;
   custom: Record<string, string>;
@@ -37,6 +38,7 @@ export function PersonForm({ person, customFields, departments, readOnly }: { pe
             <option key={d} value={d} />
           ))}
         </datalist>
+        <TextField id="location" label="Office" autoComplete="off" defaultValue={v("location", person?.location)} />
         <TextField id="phone" label="Phone" type="tel" autoComplete="off" defaultValue={v("phone", person?.phone)} />
         <TextField id="mobile" label="Mobile" type="tel" autoComplete="off" defaultValue={v("mobile", person?.mobile)} />
         {customFields.map((f) => (
@@ -104,7 +106,7 @@ export function ImportForm() {
       ) : state.error ? (
         <Alert>{state.error}</Alert>
       ) : null}
-      <Field id="csv" label="CSV file" error={state.fieldErrors?.file} hint="Columns we recognise: Email, First name, Last name or Name, Job title, Department, Phone, Mobile, and your custom fields by name. People are matched on email, so importing again updates them.">
+      <Field id="csv" label="CSV file" error={state.fieldErrors?.file} hint="Columns we recognise: Email, First name, Last name or Name, Job title, Department, Office, Phone, Mobile, and your custom fields by name. People are matched on email, so importing again updates them.">
         {(describedBy, invalid) => <input id="csv" name="file" type="file" accept=".csv,text/csv" aria-describedby={describedBy} aria-invalid={invalid || undefined} className="text-callout text-ink" />}
       </Field>
       <div>
@@ -128,6 +130,11 @@ export function AddFieldForm() {
       <div className="flex flex-wrap items-end gap-3">
         <Field id="label" label="New field" error={state.fieldErrors?.label} className="min-w-0 flex-1">
           {(describedBy, invalid) => <input id="label" name="label" placeholder="For example, Pronouns or LinkedIn" aria-describedby={describedBy} aria-invalid={invalid || undefined} className={inputClass} />}
+        </Field>
+        <Field id="sourceAttribute" label="Directory attribute (optional)" error={state.fieldErrors?.sourceAttribute} className="min-w-0 flex-1">
+          {(describedBy, invalid) => (
+            <input id="sourceAttribute" name="sourceAttribute" placeholder="Employee.Pronouns or extensionAttribute3" aria-describedby={describedBy} aria-invalid={invalid || undefined} className={inputClass} />
+          )}
         </Field>
         <Button type="submit" variant="secondary" disabled={pending} size="lg">
           Add field

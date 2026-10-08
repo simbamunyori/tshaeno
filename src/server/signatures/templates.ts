@@ -1,15 +1,18 @@
-import type { AssignmentScope, Prisma, PrismaClient, SignatureTemplate, TemplateKind } from "@prisma/client";
+import type { AssignmentScope, Audience, Prisma, PrismaClient, SignatureTemplate, TemplateKind } from "@prisma/client";
 import { asTenant, type Tx } from "@/server/db";
 import { DomainError, assertCan, type Actor } from "@/server/org/access";
 import { audit } from "@/server/org/audit";
 import { emptyDoc, parseDoc, reId } from "@/lib/signature/doc";
 import { renderHtmlSignature, sanitizeSignatureHtml } from "@/lib/signature/html-mode";
 import { renderSignature, type Rendered } from "@/lib/signature/render";
+import { describeRule, type Rule } from "@/lib/signature/rules";
 import { HTML_STARTER, starter } from "@/lib/signature/starters";
 import type { ImageRef, SignatureDoc, TemplateContent } from "@/lib/signature/types";
 import { imageRef } from "./assets";
 import { kitFor, toBrandData } from "./brand";
 import { PHOTO_SELECT, toPersonData } from "./people";
+
+export { SCOPE_RANK, resolveAssignments, type ResolvedSignatures } from "@/lib/signature/rules";
 
 /**
  * Signature templates. Each has a working draft that the studio saves
@@ -153,11 +156,19 @@ export async function setArchived(ctx: Ctx, templateId: string, archived: boolea
 
 // ─── Assignments ───────────────────────────────────────────────────
 
-export const SCOPE_RANK: Record<AssignmentScope, number> = { PERSON: 3, DEPARTMENT: 2, EVERYONE: 1 };
-
 export async function addAssignment(
   ctx: Ctx,
-  input: { templateId: string; scope: AssignmentScope; department?: string; personId?: string; forNew: boolean; forReply: boolean },
+  input: {
+    templateId: string;
+    scope: AssignmentScope;
+    department?: string;
+    groupName?: string;
+    location?: string;
+    personId?: string;
+    forNew: boolean;
+    forReply: boolean;
+    audience?: Audience;
+  },
 ) {
   assertCan(ctx.actor, "manageTemplates");
   if (!input.forNew && !input.forReply) throw new DomainError("invalid", "Choose new emails, replies, or both.", "usage");
@@ -165,28 +176,30 @@ export async function addAssignment(
     ctx.organisationId,
     async (tx) => {
       const t = await find(tx, input.templateId);
-      let department: string | null = null;
-      let personId: string | null = null;
-      let label = "Everyone";
-      if (input.scope === "DEPARTMENT") {
-        department = (input.department ?? "").trim();
-        if (!department) throw new DomainError("invalid", "Choose a department.", "department");
-        label = department;
-      } else if (input.scope === "PERSON") {
+      const value = (v: string | undefined, field: string, what: string) => {
+        const out = (v ?? "").trim().replace(/\s+/g, " ");
+        if (!out || out.length > 200) throw new DomainError("invalid", `Choose ${what}.`, field);
+        return out;
+      };
+      const data = {
+        department: input.scope === "DEPARTMENT" ? value(input.department, "department", "a department") : null,
+        groupName: input.scope === "GROUP" ? value(input.groupName, "groupName", "a group") : null,
+        location: input.scope === "LOCATION" ? value(input.location, "location", "a location") : null,
+        personId: null as string | null,
+      };
+      let personLabel: string | undefined;
+      if (input.scope === "PERSON") {
         const p = await tx.person.findFirst({ where: { id: input.personId ?? "" }, select: { id: true, email: true } });
         if (!p) throw new DomainError("invalid", "Choose a person.", "personId");
-        personId = p.id;
-        label = p.email;
+        data.personId = p.id;
+        personLabel = p.email;
       }
+      const audience = input.audience ?? "ANY";
       const a = await tx.signatureAssignment.create({
-        data: { organisationId: ctx.organisationId, templateId: t.id, scope: input.scope, department, personId, forNew: input.forNew, forReply: input.forReply },
+        data: { organisationId: ctx.organisationId, templateId: t.id, scope: input.scope, ...data, forNew: input.forNew, forReply: input.forReply, audience },
       });
-      await audit(tx, ctx.organisationId, who(ctx.actor), "template.assigned", { type: "SignatureTemplate", id: t.id }, {
-        name: t.name,
-        to: label,
-        newEmails: input.forNew,
-        replies: input.forReply,
-      }, ctx.ipAddress);
+      const described = describeRule(a, personLabel);
+      await audit(tx, ctx.organisationId, who(ctx.actor), "template.assigned", { type: "SignatureTemplate", id: t.id }, { name: t.name, to: described.who, when: described.when }, ctx.ipAddress);
       return a;
     },
     ctx.db,
@@ -207,40 +220,10 @@ export async function removeAssignment(ctx: Ctx, assignmentId: string) {
   );
 }
 
-export interface ResolvedSignatures {
-  /** The signature for new emails. */
-  newEmail: string | null;
-  /** The signature for replies and forwards. */
-  reply: string | null;
-  /** Every published signature this person may choose from, in order. */
-  all: string[];
-}
-
-/**
- * Which templates one person gets. The most specific rule wins: a rule
- * for the person beats one for their department, which beats one for
- * everyone; among equals the newest rule wins. Only published, current
- * templates count.
- */
-export function resolveAssignments(
-  person: { id: string; department: string },
-  rules: { templateId: string; scope: AssignmentScope; department: string | null; personId: string | null; forNew: boolean; forReply: boolean; createdAt: Date }[],
-): ResolvedSignatures {
-  const dept = person.department.trim().toLowerCase();
-  const matching = rules
-    .filter((r) => r.scope === "EVERYONE" || (r.scope === "PERSON" && r.personId === person.id) || (r.scope === "DEPARTMENT" && !!dept && (r.department ?? "").trim().toLowerCase() === dept))
-    .sort((a, b) => SCOPE_RANK[b.scope] - SCOPE_RANK[a.scope] || b.createdAt.getTime() - a.createdAt.getTime());
-  return {
-    newEmail: matching.find((r) => r.forNew)?.templateId ?? null,
-    reply: matching.find((r) => r.forReply)?.templateId ?? null,
-    all: [...new Set(matching.map((r) => r.templateId))],
-  };
-}
-
-export async function liveRules(tx: Tx) {
+export async function liveRules(tx: Tx): Promise<Rule[]> {
   return tx.signatureAssignment.findMany({
     where: { template: { archivedAt: null, publishedVersionId: { not: null } } },
-    select: { templateId: true, scope: true, department: true, personId: true, forNew: true, forReply: true, createdAt: true },
+    select: { templateId: true, scope: true, department: true, groupName: true, location: true, personId: true, forNew: true, forReply: true, audience: true, createdAt: true },
   });
 }
 

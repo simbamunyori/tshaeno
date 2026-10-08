@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Overview" };
 export default async function OverviewPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const params = await searchParams;
   const { actor, organisation, session } = await requireMember();
-  const [members, invited, kits, people, published, rules] = await asTenant(organisation.id, (tx) =>
+  const [members, invited, kits, people, published, rules, connected, addins] = await asTenant(organisation.id, (tx) =>
     Promise.all([
       tx.membership.count({ where: { active: true } }),
       tx.invitation.count({ where: { acceptedAt: null, revokedAt: null } }),
@@ -20,6 +20,8 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
       tx.person.count(),
       tx.signatureTemplate.count({ where: { publishedVersionId: { not: null }, archivedAt: null } }),
       tx.signatureAssignment.count(),
+      tx.directoryConnection.count({ where: { status: "CONNECTED" } }),
+      tx.outlookAddin.count(),
     ]),
   );
   const passkeys = await prisma.passkey.count({ where: { userId: actor.userId } });
@@ -39,9 +41,16 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
     },
     { done: Boolean(session.user.emailVerifiedAt), title: "Confirm your email", body: "So we can reach you about your account." },
     { done: kits > 0, title: "Add your logo to the brand kit", body: "And your colours, font, disclaimer and social links.", href: "/app/brand" },
-    { done: people > 0, title: "Add your people", body: "By hand or from a spreadsheet, with the details their signatures show.", href: "/app/people" },
+    {
+      done: connected > 0,
+      title: "Connect Google Workspace or Microsoft 365",
+      body: "Your people come in and stay up to date, and Gmail signatures are set for you.",
+      href: "/app/connections",
+    },
+    { done: people > 0, title: "Add your people", body: "From your directory, by hand, or from a spreadsheet.", href: "/app/people" },
     { done: published > 0, title: "Design and publish a signature", body: "Start from one of the industry templates or build your own.", href: "/app/signatures" },
-    { done: rules > 0, title: "Decide who gets it", body: "Everyone, a department or one person, for new emails and replies.", href: "/app/signatures" },
+    { done: rules > 0, title: "Decide who gets it", body: "Everyone, a group, a department, an office or one person.", href: "/app/signatures" },
+    { done: addins > 0, title: "Deploy the Outlook add-in", body: "If you use Outlook, so signatures appear as people write.", href: "/app/connections" },
   ];
   return (
     <div className="flex flex-col gap-8">
@@ -68,7 +77,7 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
       </Card>
       <Card>
         <CardHeader title="Coming next">
-          Connecting Google Workspace and Microsoft 365, so every person&apos;s signature is applied for them and the directory stays in step.
+          A guided start for small teams, plans and billing, and a self-service page where people update their own photo and links.
         </CardHeader>
       </Card>
     </div>

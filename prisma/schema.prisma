@@ -48,6 +48,9 @@ model Organisation {
   templates    SignatureTemplate[]
   versions     SignatureVersion[]
   assignments  SignatureAssignment[]
+  connections  DirectoryConnection[]
+  deliveries   SignatureDelivery[]
+  outlookAddin OutlookAddin?
 }
 
 enum Role {
@@ -320,25 +323,36 @@ model Person {
   /// Values for the organisation's custom fields, by key.
   custom         Json         @default("{}")
   source         PersonSource @default(MANUAL)
+  /// The person's id in Google or Microsoft, once a directory sync has matched them.
+  externalId     String?
+  /// Group names or addresses from the directory, for signature rules.
+  groups         String[]     @default([])
+  location       String       @default("")
   active         Boolean      @default(true)
+  syncedAt       DateTime?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
 
   organisation Organisation          @relation(fields: [organisationId], references: [id], onDelete: Cascade)
   photo        Asset?                @relation(fields: [photoAssetId], references: [id], onDelete: SetNull)
   assignments  SignatureAssignment[]
+  deliveries   SignatureDelivery[]
 
   @@unique([organisationId, email])
   @@index([organisationId, department])
+  @@index([organisationId, source, externalId])
 }
 
 /// An extra directory attribute, used in signatures as {{custom.key}}.
 model CustomField {
-  id             String   @id @default(cuid())
-  organisationId String
-  key            String
-  label          String
-  createdAt      DateTime @default(now())
+  id              String   @id @default(cuid())
+  organisationId  String
+  key             String
+  label           String
+  /// The directory attribute it is filled from on sync, such as
+  /// "Employee.CostCentre" in Google or "extensionAttribute3" in Microsoft.
+  sourceAttribute String?
+  createdAt       DateTime @default(now())
 
   organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
 
@@ -440,8 +454,18 @@ model SignatureVersion {
 
 enum AssignmentScope {
   EVERYONE
+  LOCATION
   DEPARTMENT
+  GROUP
   PERSON
+}
+
+/// Who an email is going to. Outlook can tell; Gmail signatures are fixed,
+/// so Gmail always gets the signature for external email.
+enum Audience {
+  ANY
+  INTERNAL
+  EXTERNAL
 }
 
 /// Gives a template to everyone, a department or one person, for new
@@ -452,9 +476,12 @@ model SignatureAssignment {
   templateId     String
   scope          AssignmentScope
   department     String?
+  groupName      String?
+  location       String?
   personId       String?
   forNew         Boolean         @default(true)
   forReply       Boolean         @default(true)
+  audience       Audience        @default(ANY)
   createdAt      DateTime        @default(now())
 
   organisation Organisation      @relation(fields: [organisationId], references: [id], onDelete: Cascade)
@@ -462,4 +489,100 @@ model SignatureAssignment {
   person       Person?           @relation(fields: [personId], references: [id], onDelete: Cascade)
 
   @@index([organisationId, templateId])
+}
+
+// ─── Connections and delivery ──────────────────────────────────────
+
+enum ConnectionProvider {
+  GOOGLE
+  MICROSOFT
+}
+
+enum ConnectionStatus {
+  /// Set up started, not yet proven to work.
+  PENDING
+  CONNECTED
+  /// Worked before, now failing a check.
+  ERROR
+}
+
+/// A link to the customer's Google Workspace or Microsoft 365. No customer
+/// secrets are stored: Google trusts our service account through
+/// domain-wide delegation, and Microsoft through admin consent.
+model DirectoryConnection {
+  id             String             @id @default(cuid())
+  organisationId String
+  provider       ConnectionProvider
+  status         ConnectionStatus   @default(PENDING)
+  /// Google: an administrator to act as when reading the directory.
+  adminEmail     String?
+  /// Microsoft: the tenant that granted consent.
+  tenantId       String?
+  /// Microsoft: the random state in the consent link, until it is used.
+  consentState   String?            @unique
+  /// Microsoft: the consent sign-in's nonce and PKCE verifier, kept here
+  /// because the admin may open the link in another browser.
+  consentFlow    Json?
+  syncEnabled    Boolean            @default(true)
+  /// Google: push signatures into Gmail.
+  pushEnabled    Boolean            @default(true)
+  /// The last health check: [{ key, ok, message }].
+  health         Json               @default("[]")
+  checkedAt      DateTime?
+  lastSyncAt     DateTime?
+  lastSyncResult Json?
+  lastSyncError  String?
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  @@unique([organisationId, provider])
+}
+
+enum DeliveryTarget {
+  GMAIL
+  OUTLOOK
+}
+
+enum DeliveryState {
+  PENDING
+  APPLIED
+  FAILED
+  SKIPPED
+}
+
+/// Whether one person's signature reached one mail client, and why not.
+model SignatureDelivery {
+  id             String         @id @default(cuid())
+  organisationId String
+  personId       String
+  target         DeliveryTarget
+  state          DeliveryState  @default(PENDING)
+  templateId     String?
+  /// sha256 of the HTML last applied, so unchanged signatures aren't pushed again.
+  hash           String?
+  attempts       Int            @default(0)
+  /// A plain explanation of the last problem, for the coverage page.
+  lastError      String?
+  appliedAt      DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  person       Person       @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@unique([personId, target])
+  @@index([organisationId, target, state])
+}
+
+/// The organisation's Outlook add-in. Its key is in the add-in's links,
+/// so the add-in can ask for signatures without anyone signing in.
+model OutlookAddin {
+  id             String   @id @default(cuid())
+  organisationId String   @unique
+  key            String   @unique
+  createdAt      DateTime @default(now())
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
 }

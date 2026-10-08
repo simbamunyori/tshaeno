@@ -14,9 +14,10 @@ import { SAMPLE_PERSON } from "@/lib/signature/fields";
 import { kitOptions, origin } from "@/server/signatures/studio-data";
 import { assetsFor, contentOf } from "@/server/signatures/templates";
 
+import { describeRule } from "@/lib/signature/rules";
+
 export const metadata: Metadata = { title: "Signatures" };
 
-const SCOPE_LABEL = { EVERYONE: "Everyone", DEPARTMENT: "a department", PERSON: "one person" } as const;
 
 export default async function SignaturesPage({ searchParams }: { searchParams: Promise<{ archived?: string }> }) {
   const { actor, organisation } = await requireMember();
@@ -27,7 +28,7 @@ export default async function SignaturesPage({ searchParams }: { searchParams: P
     const templates = await tx.signatureTemplate.findMany({
       where: { archivedAt: showArchived ? { not: null } : null },
       orderBy: { updatedAt: "desc" },
-      include: { published: { select: { number: true, createdAt: true } }, assignments: { select: { scope: true, department: true } } },
+      include: { published: { select: { number: true, createdAt: true } }, assignments: { select: { scope: true, department: true, groupName: true, location: true, forNew: true, forReply: true, audience: true } } },
     });
     const previews: Record<string, string> = {};
     for (const t of templates) {
@@ -95,7 +96,7 @@ export default async function SignaturesPage({ searchParams }: { searchParams: P
                       {rules === 0
                         ? "not given to anyone"
                         : rules === 1
-                          ? `given to ${t.assignments[0].scope === "DEPARTMENT" ? t.assignments[0].department : SCOPE_LABEL[t.assignments[0].scope]}`
+                          ? `given to ${describeRule(t.assignments[0], "one person").who.replace(/^Everyone$/, "everyone")}`
                           : `${rules} rules`}
                     </span>
                   </div>

@@ -160,3 +160,36 @@ accounts**; redirect URI platform **Web**,
 **Certificates and secrets**, **New client secret**, **Add**, and copy the
 secret's **Value** into `MICROSOFT_CLIENT_SECRET`. Put a reminder in your
 calendar for when the secret expires.
+
+## 9. Connecting customers' Google Workspace and Microsoft 365 (optional)
+
+Customers connect from **Connections** in the app. Until these settings
+are in `.env`, that page says the server isn't set up yet. Run
+`docker compose up -d` after changing it.
+
+**Google Workspace.** In console.cloud.google.com, in the same project
+or a new one: **APIs and services**, **Enable APIs**, and enable the
+**Admin SDK API** and the **Gmail API**. Then **IAM and admin**, **Service
+accounts**, **Create service account**, name it tshaeno-directory, no
+roles, **Done**. Open it, **Keys**, **Add key**, **JSON**. Paste the
+downloaded file's whole contents into `GOOGLE_SERVICE_ACCOUNT_KEY` (or
+`base64 -w0` it first), then delete the file. The service account's
+**Unique ID** is the client ID customers paste into their Admin console;
+the Connections page shows it with the scopes, so there is nothing to
+send them.
+
+**Microsoft 365.** Either give the sign-in app from step 8 the extra
+permissions, or register a second app the same way (accounts in any
+organizational directory). Under **Authentication**, add the Web redirect
+URI `https://app.tshaeno.com/connect/microsoft/callback`. Under **API
+permissions**, **Add a permission**, **Microsoft Graph**, **Application
+permissions**, and add **User.Read.All** and **GroupMember.Read.All**.
+Don't grant consent for your own tenant unless you want to connect it;
+each customer's admin grants it from the consent link. For a separate
+app, fill in `MICROSOFT_DIRECTORY_CLIENT_ID` and
+`MICROSOFT_DIRECTORY_CLIENT_SECRET`.
+
+**Outlook add-in.** Nothing to set up on the server. Each customer
+downloads their own manifest from Connections and deploys it from the
+Microsoft 365 admin centre. The add-in loads from this server, so it must
+be reachable over https at `APP_URL`.
