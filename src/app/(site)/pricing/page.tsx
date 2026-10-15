@@ -181,7 +181,7 @@ export default async function PricingPage({ searchParams }: { searchParams: Prom
             ["What if we add people part way through a year?", "You pay for the new people for the time left in your plan, nothing more."],
             [
               "Can we pay through Fourth Generation Technologies?",
-              "Yes. Add Tshaeno from the Fourth Generation marketplace and it appears on the invoice you already get. Fourth Generation email customers get Starter free.",
+              "Yes. Add Tshaeno from the Fourth Generation marketplace and it appears on the invoice you already get. If Fourth Generation hosts your email, signatures are free when you move them to the Tshaeno console. Campaigns and the other paid features need a plan.",
             ],
           ].map(([q, a]) => (
             <div key={q} className="py-5">

@@ -6,7 +6,7 @@ import { marketplaceUrl } from "@/server/site";
 
 export const metadata: Metadata = {
   title: "Buying through Fourth Generation Technologies",
-  description: "Add Tshaeno from the Fourth Generation marketplace: set up for you, billed on your Fourth Generation invoice. Starter is free for Fourth Generation email customers.",
+  description: "Add Tshaeno from the Fourth Generation marketplace: set up for you, billed on your Fourth Generation invoice. Email signatures are free for Fourth Generation hosting customers who move to the Tshaeno console.",
 };
 export const dynamic = "force-dynamic";
 
@@ -14,8 +14,22 @@ const STEPS = [
   ["Add Tshaeno in the marketplace", "Choose Tshaeno in the Fourth Generation marketplace, or ask your Fourth Generation account manager to add it."],
   ["Your organisation is created for you", "We set up your Tshaeno organisation and email an invitation to the person you name."],
   ["Sign in with your Fourth Generation account", "Use Continue with Fourth Generation on the sign-in page. No new password to remember."],
-  ["Pay on the invoice you already get", "Tshaeno appears on your Fourth Generation invoice. Change the number of people through Fourth Generation, too."],
+  ["Upgrade when you want more", "Signatures stay free. If you want campaigns or the other paid features, upgrade and it goes on your Fourth Generation invoice."],
 ] as const;
+
+const FREE = [
+  "A managed signature for every mailbox",
+  "All templates, with your own logo and colours",
+  "Details filled in from your directory",
+  "Gmail and Outlook, set from one place",
+  "Your legal disclaimer on every email",
+];
+
+const PAID = [
+  "Campaign banners under every signature",
+  "Click reports by campaign and team",
+  "Different signatures by team, office or audience",
+];
 
 export default function FourthGenerationPage() {
   const market = marketplaceUrl();
@@ -31,8 +45,29 @@ export default function FourthGenerationPage() {
           Fourth Generation keeps one supplier and one invoice for your email, apps and signatures.
         </p>
         <div className="mt-8 border-l-2 border-accent bg-surface-1 p-6">
-          <p className="font-display text-[24px] leading-8 text-ink">Fourth Generation email customers get Tshaeno Starter free.</p>
-          <p className="mt-1 text-body text-ink-muted">Add it from the marketplace and it is already paid for.</p>
+          <p className="font-display text-[24px] leading-8 text-ink">Hosting with Fourth Generation? Your email signatures are free.</p>
+          <p className="mt-1 text-body text-ink-muted">Move your signatures to the Tshaeno console and every mailbox you host with Fourth Generation gets one, for as many people as you have.</p>
+        </div>
+        <div className="mt-6 grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2">
+          <div className="flex flex-col gap-3 bg-surface-1 p-6">
+            <h2 className="text-[12px] font-semibold tracking-[0.16em] text-ink-muted uppercase">Included free</h2>
+            <ul className="flex list-disc flex-col gap-1.5 pl-5 text-body text-ink marker:text-accent">
+              {FREE.map((f) => (
+                <li key={f}>{f}</li>
+              ))}
+            </ul>
+          </div>
+          <div className="flex flex-col gap-3 bg-surface-1 p-6">
+            <h2 className="text-[12px] font-semibold tracking-[0.16em] text-ink-muted uppercase">With a paid plan</h2>
+            <ul className="flex list-disc flex-col gap-1.5 pl-5 text-body text-ink marker:text-accent">
+              {PAID.map((f) => (
+                <li key={f}>{f}</li>
+              ))}
+            </ul>
+            <Link href="/pricing" className="mt-auto text-callout font-semibold text-link hover:underline">
+              See the plans
+            </Link>
+          </div>
         </div>
       </Section>
 

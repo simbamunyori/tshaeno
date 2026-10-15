@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { emptyDoc, findBlock, insertBlock, listIn, moveBlock, newBlock, parseDoc, removeBlock, reId, updateBlock } from "./doc";
 import { fillLines } from "./fields";
-import { darkModeColour, contrast, DARK_BACKGROUND, safeHref } from "./style";
+import { darkModeBackground, darkModeColour, contrast, DARK_BACKGROUND, safeHref } from "./style";
 import type { ColumnsBlock, SignatureDoc } from "./types";
 
 function sample(): SignatureDoc {
@@ -57,6 +57,8 @@ describe("colours and links", () => {
   it("lightens dark text for dark mode and leaves light text alone", () => {
     for (const c of ["#0b1f3a", "#000000", "#0b7f78", "#5a6472"]) expect(contrast(darkModeColour(c), DARK_BACKGROUND)).toBeGreaterThanOrEqual(4.5);
     expect(darkModeColour("#e8e8e8")).toBe("#e8e8e8");
+    expect(contrast(darkModeColour("#11182b"), darkModeBackground("#f5f3ee"))).toBeGreaterThanOrEqual(4.5);
+    expect(darkModeBackground("#14213d")).toBe("#14213d");
   });
 
   it("only makes safe links", () => {

@@ -1,26 +1,15 @@
 import Link from "next/link";
 import { Wordmark } from "@/components/ui/logo";
+import { PRODUCT, RESOURCES, TEAMS } from "@/lib/site/nav";
 
 const COLUMNS: { title: string; links: [string, string][] }[] = [
+  { title: "Product", links: [...PRODUCT.map((l): [string, string] => [l.label, l.href]), ["Pricing", "/pricing"]] },
+  { title: "Solutions", links: [...TEAMS.map((l): [string, string] => [l.label, l.href]), ["By industry", "/solutions"]] },
+  { title: "Resources", links: RESOURCES.map((l): [string, string] => [l.label, l.href]) },
   {
-    title: "Product",
+    title: "Company",
     links: [
-      ["Overview", "/#product"],
-      ["Templates", "/templates"],
-      ["Pricing", "/pricing"],
-      ["Book a demo", "/demo"],
-    ],
-  },
-  {
-    title: "Compare",
-    links: [
-      ["Tshaeno or built-in signatures", "/compare"],
-      ["Buying through Fourth Generation", "/fourth-generation"],
-    ],
-  },
-  {
-    title: "Your account",
-    links: [
+      ["Fourth Generation customers", "/fourth-generation"],
       ["Start a free trial", "/sign-up"],
       ["Sign in", "/sign-in"],
       ["Update your own photo and links", "/me"],
@@ -31,7 +20,7 @@ const COLUMNS: { title: string; links: [string, string][] }[] = [
 export function SiteFooter() {
   return (
     <footer className="bg-[#0E1424] text-white">
-      <div className="mx-auto grid max-w-[1200px] gap-12 px-4 pt-20 pb-12 sm:px-6 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+      <div className="mx-auto grid max-w-[1200px] gap-12 px-4 pt-20 pb-12 sm:px-6 sm:grid-cols-2 lg:grid-cols-[1.3fr_1fr_1fr_1fr_1fr]">
         <div className="flex flex-col gap-5">
           <Wordmark height={44} className="text-[#E3C893]" />
           <p className="max-w-[320px] text-[14px] leading-6 text-white/65">

@@ -275,8 +275,8 @@ export default function Home() {
         <div className="flex flex-col gap-4 rounded-xl border border-border bg-surface-0 p-8 sm:p-10">
           <h2 className="font-display text-[34px] leading-[40px] text-ink">Already with Fourth Generation?</h2>
           <p className="text-[16px] leading-7 text-ink-muted">
-            Add Tshaeno from the Fourth Generation marketplace. We set it up for you and it appears on the invoice you already get. Fourth Generation email customers
-            get the Starter plan free.
+            If Fourth Generation hosts your email, your signatures are free when you move them to the Tshaeno console. Campaigns and the other paid features are there
+            when you want them, on the invoice you already get.
           </p>
           <Link href="/fourth-generation" className="mt-auto inline-flex items-center gap-2 font-semibold text-link hover:underline">
             How buying through Fourth Generation works <ArrowRight aria-hidden className="size-4" />
