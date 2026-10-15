@@ -4,7 +4,9 @@ import { looksLikeEmail, normaliseEmail } from "@/server/auth/service";
 import { DomainError, assertCan, type Actor } from "@/server/org/access";
 import { audit } from "@/server/org/audit";
 import { mapHeaders, parseCsv } from "@/lib/csv";
-import type { PersonData } from "@/lib/signature/types";
+import { cleanSocialUrl } from "@/lib/signature/socials";
+import type { PersonData, SocialNetwork } from "@/lib/signature/types";
+import { SOCIALS } from "./brand";
 import { imageRef, processImage, saveAsset } from "./assets";
 
 /**
@@ -277,5 +279,43 @@ export function toPersonData(p: PersonWithPhoto, origin: string): PersonData {
     mobile: p.mobile,
     photo: imageRef(origin, p.photo),
     custom,
+    socials: personSocials(p),
   };
+}
+
+// ─── Social links ──────────────────────────────────────────────────
+
+export function personSocials(p: Pick<Person, "socials">): Partial<Record<SocialNetwork, string>> {
+  const out: Partial<Record<SocialNetwork, string>> = {};
+  for (const [k, v] of Object.entries((p.socials ?? {}) as Record<string, unknown>)) {
+    if (SOCIALS.includes(k as SocialNetwork) && typeof v === "string" && v) out[k as SocialNetwork] = v;
+  }
+  return out;
+}
+
+/** Checks each link; throws on the first that isn't on its network's site. */
+export function cleanSocials(input: Partial<Record<string, string>>, allowed: readonly SocialNetwork[] = SOCIALS): Partial<Record<SocialNetwork, string>> {
+  const out: Partial<Record<SocialNetwork, string>> = {};
+  for (const network of allowed) {
+    const r = cleanSocialUrl(network, input[network] ?? "");
+    if ("error" in r) throw new DomainError("invalid", r.error, `social_${network}`);
+    if (r.url) out[network] = r.url;
+  }
+  return out;
+}
+
+/** An admin sets someone's own social links. */
+export async function setPersonSocials(ctx: Ctx, personId: string, input: Partial<Record<string, string>>) {
+  assertCan(ctx.actor, "manageDirectory");
+  const socials = cleanSocials(input);
+  await asTenant(
+    ctx.organisationId,
+    async (tx) => {
+      const person = await tx.person.findFirst({ where: { id: personId } });
+      if (!person) throw new DomainError("not-found", "That person isn't in the directory.");
+      await tx.person.update({ where: { id: person.id }, data: { socials } });
+      await audit(tx, ctx.organisationId, who(ctx.actor), "person.socials_changed", { type: "Person", id: person.id }, { email: person.email, networks: Object.keys(socials) }, ctx.ipAddress);
+    },
+    ctx.db,
+  );
 }

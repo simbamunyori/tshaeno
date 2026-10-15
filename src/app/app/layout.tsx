@@ -4,6 +4,7 @@ import { MobileNav } from "@/components/app/mobile-nav";
 import { OrgSwitcher } from "@/components/app/org-switcher";
 import { SidebarNav } from "@/components/app/sidebar-nav";
 import { UserCard } from "@/components/app/user-card";
+import { PlanBanner } from "@/components/app/plan-banner";
 import { Logo } from "@/components/ui/logo";
 import { organisationsFor } from "@/server/auth/service";
 import { prisma } from "@/server/db";
@@ -31,7 +32,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       >
         Skip to content
       </a>
-      <aside className="sticky top-0 hidden h-dvh w-[248px] shrink-0 flex-col gap-6 border-r border-border bg-surface-1 px-4 py-6 lg:flex">
+      <aside className="print:hidden sticky top-0 hidden h-dvh w-[248px] shrink-0 flex-col gap-6 border-r border-border bg-surface-1 px-4 py-6 lg:flex">
         <Link href="/app" className="self-start rounded-sm px-2">
           <Logo />
         </Link>
@@ -39,7 +40,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <SidebarNav staff={staff} />
         <div className="mt-auto">{user}</div>
       </aside>
-      <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-border bg-surface-1 px-4 lg:hidden">
+      <header className="print:hidden sticky top-0 z-10 flex h-14 items-center justify-between border-b border-border bg-surface-1 px-4 lg:hidden">
         <Link href="/app" className="rounded-sm">
           <Logo size={26} />
         </Link>
@@ -57,6 +58,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <main id="main" className="min-w-0 flex-1 px-4 py-6 sm:px-8 lg:px-12 lg:py-10">
         <div className="mx-auto max-w-[1100px]">
           {session.user.emailVerifiedAt ? null : <EmailBanner email={session.user.email} />}
+          <PlanBanner organisationId={organisation.id} />
           {children}
         </div>
       </main>

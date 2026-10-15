@@ -58,3 +58,69 @@ export function invitation(input: { organisation: string; inviter: string; role:
     }),
   };
 }
+
+export function invoiceIssued(input: { organisation: string; number: string; total: string; due: string; renewal: boolean; url: string }): Rendered {
+  return {
+    subject: `Tshaeno invoice ${input.number} for ${input.organisation}`,
+    ...layout({
+      heading: `Invoice ${input.number}`,
+      paragraphs: [
+        input.renewal ? `Your Tshaeno plan for ${input.organisation} renews soon. This invoice is for the next period.` : `Here is the invoice for ${input.organisation}'s Tshaeno plan.`,
+        `Amount due: ${input.total}, by ${input.due}. You can pay online or by bank transfer; the invoice has the details.`,
+      ],
+      button: { label: "View invoice", url: input.url },
+      footnote: "Signatures keep working while an invoice is open.",
+    }),
+  };
+}
+
+export function paymentReceived(input: { organisation: string; number: string; total: string; url: string }): Rendered {
+  return {
+    subject: `Payment received for ${input.number}`,
+    ...layout({
+      heading: "Thank you, payment received",
+      paragraphs: [`We've received ${input.total} for invoice ${input.number}, and ${input.organisation}'s plan is up to date.`],
+      button: { label: "View receipt", url: input.url },
+      footnote: "Keep this email for your records.",
+    }),
+  };
+}
+
+export function trialEnding(input: { organisation: string; ends: string; url: string }): Rendered {
+  return {
+    subject: `${input.organisation}'s Tshaeno trial ends on ${input.ends}`,
+    ...layout({
+      heading: "Your trial ends soon",
+      paragraphs: [
+        `${input.organisation}'s free trial ends on ${input.ends}.`,
+        "Choose a plan to keep everything as it is. If you don't, signatures keep working for up to 15 people on the free Starter plan, with a small Signature by Tshaeno link under them.",
+      ],
+      button: { label: "Choose a plan", url: input.url },
+      footnote: "Nothing is deleted when a trial ends.",
+    }),
+  };
+}
+
+export function portalLink(input: { firstName: string; organisation: string; url: string }): Rendered {
+  return {
+    subject: "Update your email signature",
+    ...layout({
+      heading: "Update your email signature",
+      paragraphs: [`Hello ${input.firstName}.`, `Use this link to change your photo and social links in your ${input.organisation} email signature.`],
+      button: { label: "Update my signature", url: input.url },
+      footnote: "The link works once, for 30 minutes. If you didn't ask for it, ignore this email.",
+    }),
+  };
+}
+
+export function quoteRequest(input: { organisation: string; name: string; email: string; people: string; note: string; url: string }): Rendered {
+  return {
+    subject: `Enterprise quote request: ${input.organisation}`,
+    ...layout({
+      heading: "Enterprise quote request",
+      paragraphs: [`${input.name} (${input.email}) at ${input.organisation} asked for a quote for about ${input.people} people.`, input.note ? `They said: ${input.note}` : "They left no note."],
+      button: { label: "Open in platform admin", url: input.url },
+      footnote: "Set an agreed price on the organisation in platform admin, then they can check out.",
+    }),
+  };
+}

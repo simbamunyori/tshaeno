@@ -6,7 +6,7 @@ import { requestContext } from "@/server/auth/next";
 import { DomainError } from "@/server/org/access";
 import { requireMember } from "@/server/org/context";
 import { kickDelivery } from "@/server/jobs/queue";
-import { addCustomField, importPeople, removeCustomField, removePerson, savePerson, setPersonPhoto, type ImportResult } from "@/server/signatures/people";
+import { addCustomField, importPeople, removeCustomField, removePerson, savePerson, setPersonPhoto, setPersonSocials, type ImportResult } from "@/server/signatures/people";
 
 /** Signatures may have changed: bring Gmail up to date. */
 const kick = async () => kickDelivery((await requireMember()).organisation.id);
@@ -113,4 +113,18 @@ export async function addFieldAction(_prev: PeopleState, form: FormData): Promis
 export async function removeFieldAction(form: FormData) {
   await removeCustomField(await ctx(), s(form, "id"));
   revalidatePath("/app/people");
+}
+
+export async function socialsAction(_prev: PeopleState, form: FormData): Promise<PeopleState> {
+  const id = String(form.get("id"));
+  const input: Record<string, string> = {};
+  for (const [k, v] of form.entries()) if (k.startsWith("social_")) input[k.slice(7)] = String(v);
+  try {
+    await setPersonSocials(await ctx(), id, input);
+  } catch (e) {
+    return failure(e);
+  }
+  await kick();
+  revalidatePath(`/app/people/${id}`);
+  return { ok: "Saved." };
 }

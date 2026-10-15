@@ -193,6 +193,8 @@ export interface PersonData {
   mobile: string;
   photo: ImageRef | null;
   custom: Record<string, string>;
+  /** Their own social links, used in place of the company's for the same network. */
+  socials?: Partial<Record<SocialNetwork, string>>;
 }
 
 export interface RenderContext {

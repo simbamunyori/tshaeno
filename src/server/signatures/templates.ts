@@ -3,6 +3,8 @@ import { asTenant, type Tx } from "@/server/db";
 import { DomainError, assertCan, type Actor } from "@/server/org/access";
 import { audit } from "@/server/org/audit";
 import { emptyDoc, parseDoc, reId } from "@/lib/signature/doc";
+import { withBadge } from "@/lib/signature/badge";
+import { badgeFor } from "@/server/billing/badge";
 import { renderHtmlSignature, sanitizeSignatureHtml } from "@/lib/signature/html-mode";
 import { renderSignature, type Rendered } from "@/lib/signature/render";
 import { describeRule, type Rule } from "@/lib/signature/rules";
@@ -252,6 +254,10 @@ export async function renderForPerson(tx: Tx, organisationId: string, templateId
   const kit = await kitFor(tx, organisationId, t.brandKitId);
   const brand = toBrandData(kit, origin);
   const content = contentOf(t.published.kind, t.published.content);
-  if (content.kind === "HTML") return renderHtmlSignature(content.html, { brand, person: toPersonData(person, origin) });
-  return renderSignature(content.doc, { brand, person: toPersonData(person, origin), assets: await assetsFor(tx, content.doc, origin), origin });
+  const out =
+    content.kind === "HTML"
+      ? renderHtmlSignature(content.html, { brand, person: toPersonData(person, origin) })
+      : renderSignature(content.doc, { brand, person: toPersonData(person, origin), assets: await assetsFor(tx, content.doc, origin), origin });
+  const badge = await badgeFor(tx, organisationId);
+  return badge ? withBadge(out, badge) : out;
 }

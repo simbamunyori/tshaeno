@@ -2,6 +2,7 @@ import { CircleCheck, Circle } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Alert } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { asTenant, prisma } from "@/server/db";
@@ -56,6 +57,17 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
     <div className="flex flex-col gap-8">
       <PageHeader eyebrow={organisation.name} title={`Hello, ${actor.name.split(" ")[0]}`} />
       {params.joined ? <Alert tone="positive">You&apos;ve joined {organisation.name}.</Alert> : null}
+      {organisation.firstSignatureAt ? null : (
+        <Card className="flex flex-wrap items-center justify-between gap-4 border-brand/30 bg-brand-soft">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-headline text-ink">Get your first signature live</h2>
+            <p className="text-callout text-ink-muted">Bring in your people, pick a signature, and put it in everyone&apos;s email. Most small teams finish in under 20 minutes.</p>
+          </div>
+          <Button asChild>
+            <Link href="/app/start">Start</Link>
+          </Button>
+        </Card>
+      )}
       <Card>
         <CardHeader title="Get set up">A few minutes now, then your team is ready for signatures.</CardHeader>
         <ol className="flex flex-col divide-y divide-border">
@@ -76,9 +88,7 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
         </ol>
       </Card>
       <Card>
-        <CardHeader title="Coming next">
-          A guided start for small teams, plans and billing, and a self-service page where people update their own photo and links.
-        </CardHeader>
+        <CardHeader title="Coming next">A partner API, so Tshaeno can be bought through the Fourth Generation marketplace, then campaigns and analytics.</CardHeader>
       </Card>
     </div>
   );

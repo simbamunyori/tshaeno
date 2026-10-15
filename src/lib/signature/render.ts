@@ -181,7 +181,7 @@ function renderBlock(ctx: Ctx, b: Block): string {
     }
     case "socials": {
       const links = ctx.brand.socials
-        .map((s) => ({ ...s, url: safeHref(ctx.person.custom[s.network] || s.url) }))
+        .map((s) => ({ ...s, url: safeHref(ctx.person.socials?.[s.network] || ctx.person.custom[s.network] || s.url) }))
         .filter((s): s is { network: SocialNetwork; url: string } => !!s.url);
       if (!links.length) return "";
       const hex = colour(ctx, b.colour);

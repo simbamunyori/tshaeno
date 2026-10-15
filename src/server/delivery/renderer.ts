@@ -1,7 +1,9 @@
 import { createHash } from "node:crypto";
 import type { Person } from "@prisma/client";
 import type { Tx } from "@/server/db";
+import { withBadge } from "@/lib/signature/badge";
 import { renderHtmlSignature } from "@/lib/signature/html-mode";
+import { badgeFor } from "@/server/billing/badge";
 import { renderSignature, type Rendered } from "@/lib/signature/render";
 import { signatureFor, type EmailContext, type Rule } from "@/lib/signature/rules";
 import type { BrandData, TemplateContent } from "@/lib/signature/types";
@@ -24,6 +26,7 @@ export const hashHtml = (html: string) => createHash("sha256").update(html).dige
  */
 export class OrgRenderer {
   private rules: Rule[] | null = null;
+  private badge: Promise<string | null> | null = null;
   private templates = new Map<string, Promise<{ content: TemplateContent; brand: BrandData; assets: Awaited<ReturnType<typeof assetsFor>> } | null>>();
 
   constructor(
@@ -60,10 +63,18 @@ export class OrgRenderer {
     const t = await this.template(templateId);
     if (!t) return null;
     const data = toPersonData(person, this.origin);
-    const out =
+    const signature =
       t.content.kind === "HTML"
         ? renderHtmlSignature(t.content.html, { brand: t.brand, person: data })
         : renderSignature(t.content.doc, { brand: t.brand, person: data, assets: t.assets, origin: this.origin });
+    this.badge ??= badgeFor(this.tx, this.organisationId);
+    const badge = await this.badge;
+    const out = badge ? withBadge(signature, badge) : signature;
     return { ...out, templateId, hash: hashHtml(out.html) };
   }
+}
+
+/** Notes when an organisation's first signature went live, to measure getting started. */
+export async function markFirstSignature(tx: Tx, organisationId: string, at: Date) {
+  await tx.organisation.updateMany({ where: { id: organisationId, firstSignatureAt: null }, data: { firstSignatureAt: at } });
 }
