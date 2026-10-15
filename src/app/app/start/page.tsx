@@ -1,5 +1,6 @@
 import { CircleCheck, Circle } from "lucide-react";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import { startState } from "@/server/onboarding/service";
 import { can } from "@/server/org/access";
 import { requireMember } from "@/server/org/context";
 import { kitOptions, origin } from "@/server/signatures/studio-data";
+import { PICKED_TEMPLATE_COOKIE } from "@/server/site";
 import { quickStartAction } from "./actions";
 
 export const metadata: Metadata = { title: "Get started" };
@@ -46,7 +48,10 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
   const manage = can(actor, "manageTemplates");
   const kits = await asTenant(organisation.id, (tx) => kitOptions(tx, organisation.id));
   const o = origin();
-  const picks = PICKS.map((k) => STARTERS.find((x) => x.key === k)).filter((x) => !!x);
+  // A template picked on the website before signing up comes first.
+  const pickedKey = (await cookies()).get(PICKED_TEMPLATE_COOKIE)?.value;
+  const picked = STARTERS.find((x) => x.key === pickedKey);
+  const picks = [picked, ...PICKS.map((k) => STARTERS.find((x) => x.key === k))].filter((x, i, all) => !!x && all.indexOf(x) === i).slice(0, 4) as typeof STARTERS;
   const shown = picks.length >= 2 ? picks : STARTERS.slice(0, 4);
   const peopleDone = s.people > 0;
   const signatureDone = s.published > 0 && s.rules > 0;
@@ -112,7 +117,10 @@ export default async function StartPage({ searchParams }: { searchParams: Promis
                 <li key={st.key} className="flex flex-col gap-3 rounded-lg border border-border p-4">
                   <SignatureThumb html={renderSignature(st.doc, { brand: kits[0].brand, person: SAMPLE_PERSON, assets: {}, origin: o }).html} title={st.name} />
                   <form action={quickStartAction} className="flex items-center justify-between gap-3">
-                    <span className="font-semibold text-ink">{st.name}</span>
+                    <span className="flex flex-col">
+                      <span className="font-semibold text-ink">{st.name}</span>
+                      {st === picked ? <span className="text-caption text-ink-muted">The one you picked on our website</span> : null}
+                    </span>
                     <input type="hidden" name="starter" value={st.key} />
                     <Button type="submit" size="sm">
                       Use this
