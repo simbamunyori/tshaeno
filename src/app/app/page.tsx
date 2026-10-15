@@ -88,7 +88,7 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
         </ol>
       </Card>
       <Card>
-        <CardHeader title="Coming next">Campaign banners in signatures, with click tracking, and reports on how signatures are doing.</CardHeader>
+        <CardHeader title="Coming next">The Tshaeno website, with the template gallery and prices in your own currency.</CardHeader>
       </Card>
     </div>
   );

@@ -2,6 +2,9 @@ import { createHash } from "node:crypto";
 import type { Person } from "@prisma/client";
 import type { Tx } from "@/server/db";
 import { withBadge } from "@/lib/signature/badge";
+import { campaignFor, withBanner } from "@/lib/signature/campaigns";
+import { clickUrl, liveCampaigns, type LiveCampaign } from "@/server/campaigns/service";
+import { assetUrl } from "@/server/signatures/assets";
 import { renderHtmlSignature } from "@/lib/signature/html-mode";
 import { badgeFor } from "@/server/billing/badge";
 import { renderSignature, type Rendered } from "@/lib/signature/render";
@@ -27,12 +30,14 @@ export const hashHtml = (html: string) => createHash("sha256").update(html).dige
 export class OrgRenderer {
   private rules: Rule[] | null = null;
   private badge: Promise<string | null> | null = null;
+  private campaigns: Promise<LiveCampaign[]> | null = null;
   private templates = new Map<string, Promise<{ content: TemplateContent; brand: BrandData; assets: Awaited<ReturnType<typeof assetsFor>> } | null>>();
 
   constructor(
     private readonly tx: Tx,
     private readonly organisationId: string,
     private readonly origin: string,
+    private readonly now = new Date(),
   ) {}
 
   async templateFor(person: Pick<Person, "id" | "department" | "location" | "groups">, ctx: EmailContext): Promise<string | null> {
@@ -67,9 +72,21 @@ export class OrgRenderer {
       t.content.kind === "HTML"
         ? renderHtmlSignature(t.content.html, { brand: t.brand, person: data })
         : renderSignature(t.content.doc, { brand: t.brand, person: data, assets: t.assets, origin: this.origin });
+    this.campaigns ??= liveCampaigns(this.tx, this.now);
+    const campaign = campaignFor(person, await this.campaigns, ctx, this.now);
+    const withCampaign = campaign
+      ? withBanner(signature, {
+          imageUrl: assetUrl(this.origin, campaign.image),
+          imageWidth: campaign.image.width,
+          imageHeight: campaign.image.height,
+          width: campaign.width,
+          alt: campaign.alt,
+          href: clickUrl(this.origin, campaign.key, person.id),
+        })
+      : signature;
     this.badge ??= badgeFor(this.tx, this.organisationId);
     const badge = await this.badge;
-    const out = badge ? withBadge(signature, badge) : signature;
+    const out = badge ? withBadge(withCampaign, badge) : withCampaign;
     return { ...out, templateId, hash: hashHtml(out.html) };
   }
 }

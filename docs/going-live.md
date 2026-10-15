@@ -234,3 +234,15 @@ Then put the console's issuer address (the one that serves
 `.env` as `FOURTHGEN_OIDC_ISSUER`, `FOURTHGEN_CLIENT_ID` and
 `FOURTHGEN_CLIENT_SECRET`, and run `docker compose up -d`. A **Continue with
 Fourth Generation** button appears on the sign-in page.
+
+## 12. Claude for drafting and brand reviews (optional)
+
+1. Sign in at <https://console.anthropic.com/>, open **API keys** and click
+   **Create key**. Name it `Tshaeno`.
+2. Put it in `.env` as `ANTHROPIC_API_KEY` and run `docker compose up -d`.
+3. A **Draft it with Claude** box appears when starting a signature, and an
+   **Ask Claude for a second look** button on the Reports page.
+
+Claude only ever sees brand kits, templates and what admins type in, never
+anyone's details. `ANTHROPIC_MODEL` picks the model; the default is the most
+capable one.

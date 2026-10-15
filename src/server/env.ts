@@ -22,6 +22,9 @@ const schema = z.object({
   /** Sign in with Microsoft: a multi-tenant app registration in Entra ID. */
   MICROSOFT_CLIENT_ID: optional(z.string()),
   MICROSOFT_CLIENT_SECRET: optional(z.string()),
+  /** Drafting signatures and reviewing them with Claude. Optional. */
+  ANTHROPIC_API_KEY: optional(z.string()),
+  ANTHROPIC_MODEL: z.string().min(1).default("claude-opus-5-5"),
   /** Sign in from the Fourth Generation console: its OpenID Connect issuer and a client registered there. */
   FOURTHGEN_OIDC_ISSUER: optional(z.string().url()),
   FOURTHGEN_CLIENT_ID: optional(z.string()),

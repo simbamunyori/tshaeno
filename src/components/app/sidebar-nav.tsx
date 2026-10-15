@@ -1,6 +1,6 @@
 "use client";
 
-import { Contact, CreditCard, Rocket, Gauge, LayoutGrid, Palette, PenLine, Plug, ScrollText, Settings, ShieldCheck, UsersRound, Wrench } from "lucide-react";
+import { BarChart3, Contact, CreditCard, Rocket, Gauge, LayoutGrid, Megaphone, Palette, PenLine, Plug, ScrollText, Settings, ShieldCheck, UsersRound, Wrench } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/cn";
@@ -12,6 +12,8 @@ export const NAV = [
   { href: "/app/brand", label: "Brand kits", icon: Palette },
   { href: "/app/people", label: "People", icon: Contact },
   { href: "/app/coverage", label: "Coverage", icon: Gauge },
+  { href: "/app/campaigns", label: "Campaigns", icon: Megaphone },
+  { href: "/app/analytics", label: "Reports", icon: BarChart3 },
   { href: "/app/connections", label: "Connections", icon: Plug },
   { href: "/app/team", label: "Team", icon: UsersRound },
   { href: "/app/billing", label: "Plan and billing", icon: CreditCard },
