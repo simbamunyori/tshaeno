@@ -27,6 +27,8 @@ export interface TextBlock extends BlockBase {
   align: Align;
   /** Letter case for short labels such as a job title. */
   uppercase?: boolean;
+  /** Georgia instead of the brand font, for a name or a heading. */
+  serif?: boolean;
 }
 
 export type ImageSource = "logo" | "photo" | "asset";
@@ -87,6 +89,8 @@ export interface ButtonBlock extends BlockBase {
   colour: ColourRef;
   textColour: ColourRef;
   rounded: boolean;
+  /** A thin border in the button colour instead of a solid fill. */
+  outline?: boolean;
   align: Align;
 }
 
@@ -116,7 +120,13 @@ export interface ColumnsBlock extends BlockBase {
   /** A thin vertical rule between the columns. */
   rule: boolean;
   ruleColour: ColourRef;
+  /** Thickness of the rule in pixels. */
+  ruleWidth?: 1 | 2 | 3 | 4;
   valign: "top" | "middle";
+  /** A panel of colour behind both columns. */
+  background?: ColourRef;
+  /** Space inside the panel, in pixels. */
+  padding?: number;
 }
 
 export type LeafBlock =

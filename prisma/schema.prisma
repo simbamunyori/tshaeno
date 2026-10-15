@@ -888,3 +888,22 @@ model CampaignClick {
   @@index([organisationId, createdAt])
   @@index([campaignId, createdAt])
 }
+
+// ─── Website ───────────────────────────────────────────────────────
+
+/// Someone asked for a demo on the website. Not tenant data: they may not have an organisation yet.
+model DemoRequest {
+  id        String    @id @default(cuid())
+  name      String
+  email     String
+  company   String
+  people    Int
+  phone     String?
+  message   String?
+  ipAddress String?
+  handledAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([createdAt])
+  @@index([email, createdAt])
+}

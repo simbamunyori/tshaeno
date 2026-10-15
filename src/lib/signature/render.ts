@@ -123,7 +123,8 @@ function renderBlock(ctx: Ctx, b: Block): string {
       const px = textPx(b.size, ctx.base);
       const extra = `${b.bold ? "font-weight:bold;" : ""}${b.italic ? "font-style:italic;" : ""}${b.uppercase ? "text-transform:uppercase;letter-spacing:1px;" : ""}`;
       const body = lines.map(escapeHtml).join("<br>");
-      return `<tr><td align="${b.align}" style="padding:0 0 ${GAP}px 0;text-align:${b.align};${textStyle(ctx, px, colour(ctx, b.colour), extra)}">${body}</td></tr>`;
+      const style = textStyle(ctx, px, colour(ctx, b.colour), extra);
+      return `<tr><td align="${b.align}" style="padding:0 0 ${GAP}px 0;text-align:${b.align};${b.serif ? style.replace(`font-family:${ctx.font};`, `font-family:${FONTS.georgia.stack};`) : style}">${body}</td></tr>`;
     }
     case "image": {
       const ref = b.source === "logo" ? ctx.brand.logo : b.source === "photo" ? ctx.person.photo : b.assetId ? ctx.assets[b.assetId] : null;
@@ -213,7 +214,9 @@ function renderBlock(ctx: Ctx, b: Block): string {
       const fg = colour(ctx, b.textColour);
       const px = textPx("sm", ctx.base);
       const radius = b.rounded ? "border-radius:4px;" : "";
-      const btn = `<table ${TABLE} style="border-collapse:separate"><tr><td bgcolor="${bg}" style="background-color:${bg};${radius}padding:7px 14px">${link(href, escapeHtml(label), `color:${fg};${textStyle(ctx, px, fg, "font-weight:bold;")}`)}</td></tr></table>`;
+      const btn = b.outline
+        ? `<table ${TABLE} style="border-collapse:separate"><tr><td style="border:1px solid ${bg};${radius}padding:6px 13px">${link(href, escapeHtml(label), `color:${bg};${textStyle(ctx, px, bg, "font-weight:bold;")}`)}</td></tr></table>`
+        : `<table ${TABLE} style="border-collapse:separate"><tr><td bgcolor="${bg}" style="background-color:${bg};${radius}padding:7px 14px">${link(href, escapeHtml(label), `color:${fg};${textStyle(ctx, px, fg, "font-weight:bold;")}`)}</td></tr></table>`;
       return cell(aligned(btn, b.align), b.align, GAP + 2);
     }
     case "disclaimer": {
@@ -228,21 +231,29 @@ function renderBlock(ctx: Ctx, b: Block): string {
   }
 }
 
+/** Puts a columns block on its panel of colour, when it has one. */
+function panel(ctx: Ctx, b: ColumnsBlock, inner: string): string {
+  if (!b.background) return inner;
+  const bg = colour(ctx, b.background);
+  const pad = Math.min(32, Math.max(0, Math.round(b.padding ?? 14)));
+  return `<table ${TABLE} width="100%" style="border-collapse:separate;width:100%"><tr><td bgcolor="${bg}" style="background-color:${bg};border-radius:6px;padding:${pad}px">${inner}</td></tr></table>`;
+}
+
 function renderColumns(ctx: Ctx, b: ColumnsBlock): string {
   const left = renderBlocks(ctx, b.left);
   const right = renderBlocks(ctx, b.right);
   if (!left && !right) return "";
   const wrap = (rows: string) => `<table ${TABLE} style="border-collapse:collapse">${rows}</table>`;
-  if (!left || !right) return `<tr><td style="padding:0">${wrap(left || right)}</td></tr>`;
+  if (!left || !right) return `<tr><td style="padding:0">${panel(ctx, b, wrap(left || right))}</td></tr>`;
   const w = Math.round(b.leftWidth);
   const gap = Math.round(b.gap);
-  const rule = b.rule ? `border-left:1px solid ${colour(ctx, b.ruleColour)};` : "";
-  return (
-    `<tr><td style="padding:0 0 ${GAP}px 0"><table ${TABLE} style="border-collapse:collapse"><tr>` +
+  const rule = b.rule ? `border-left:${b.ruleWidth ?? 1}px solid ${colour(ctx, b.ruleColour)};` : "";
+  const inner =
+    `<table ${TABLE} style="border-collapse:collapse"><tr>` +
     `<td valign="${b.valign}" width="${w}" style="width:${w}px;padding:0 ${gap}px 0 0;vertical-align:${b.valign}">${wrap(left)}</td>` +
     `<td valign="${b.valign}" style="${rule}padding:0 0 0 ${b.rule ? gap : 0}px;vertical-align:${b.valign}">${wrap(right)}</td>` +
-    `</tr></table></td></tr>`
-  );
+    `</tr></table>`;
+  return `<tr><td style="padding:0 0 ${GAP}px 0">${panel(ctx, b, inner)}</td></tr>`;
 }
 
 export function renderSignature(doc: SignatureDoc, context: RenderContext): Rendered {

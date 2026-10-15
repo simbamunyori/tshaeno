@@ -1,4 +1,5 @@
-import { Code2, LayoutTemplate } from "lucide-react";
+import { Code2, ImagePlus, LayoutTemplate } from "lucide-react";
+import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Card } from "@/components/ui/card";
@@ -9,6 +10,8 @@ import { can } from "@/server/org/access";
 import { requireMember } from "@/server/org/context";
 import { SAMPLE_PERSON } from "@/lib/signature/fields";
 import { renderSignature } from "@/lib/signature/render";
+import { PREVIEW_GRAPHIC, withGraphic } from "@/lib/site/preview";
+import { graphicPlaceholder, logoPlaceholder } from "@/lib/site/samples";
 import { INDUSTRIES, STARTERS } from "@/lib/signature/starters";
 import { kitOptions, origin } from "@/server/signatures/studio-data";
 import { createTemplateAction } from "../actions";
@@ -26,6 +29,9 @@ export default async function NewSignaturePage({ searchParams }: { searchParams:
   const kit = kits[0];
   const o = origin();
   const shown = STARTERS.filter((s) => !industry || s.industry === industry);
+  // Until a logo is uploaded, show where it will go rather than leaving a gap.
+  const brand = kit.brand.logo ? kit.brand : { ...kit.brand, logo: logoPlaceholder(kit.brand.company || organisation.name, kit.brand.colours.primary) };
+  const graphic = { [PREVIEW_GRAPHIC]: graphicPlaceholder(kit.brand.colours.primary) };
 
   return (
     <div className="flex flex-col gap-8">
@@ -68,14 +74,30 @@ export default async function NewSignaturePage({ searchParams }: { searchParams:
         <div className="mb-5 flex flex-col gap-3">
           <h2 className="text-headline text-ink">Or start from one of {STARTERS.length} templates</h2>
           <p className="text-callout text-ink-muted">
-            Shown in your {kit.name} colours. Everything can be changed once you open it.
+            Shown in your {kit.name} colours. Every one has room for your own graphic, and you can move or change anything once you open it.
           </p>
+          {kit.brand.logo ? null : (
+            <div className="flex flex-col gap-3 rounded-lg border border-border bg-surface-0 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <span className="flex items-start gap-3">
+                <ImagePlus aria-hidden className="mt-0.5 size-5 shrink-0 text-accent" />
+                <span className="text-callout text-ink">
+                  <span className="font-semibold">Your logo isn&apos;t uploaded yet.</span> Add it to your brand kit once and every template here uses it.
+                </span>
+              </span>
+              <Link href={`/app/brand/${kit.id}`} className="shrink-0 rounded-md border border-border-strong bg-surface-1 px-3 py-2 text-callout font-semibold text-ink hover:bg-surface-2">
+                Upload your logo
+              </Link>
+            </div>
+          )}
           <IndustryFilter industries={[...INDUSTRIES]} current={industry} />
         </div>
         <ul className="grid gap-4 md:grid-cols-2">
           {shown.map((s) => (
             <li key={s.key} className="flex flex-col gap-3 rounded-lg border border-border p-4">
-              <SignatureThumb html={renderSignature(s.doc, { brand: kit.brand, person: SAMPLE_PERSON, assets: {}, origin: o }).html} title={s.name} />
+              <SignatureThumb
+                html={renderSignature(s.graphic ? withGraphic(s.doc) : s.doc, { brand, person: SAMPLE_PERSON, assets: s.graphic ? graphic : {}, origin: o }).html}
+                title={s.name}
+              />
               <div className="flex flex-wrap items-end justify-between gap-3">
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span className="text-caption font-semibold uppercase tracking-wide text-link">{s.industry}</span>

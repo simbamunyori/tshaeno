@@ -1,19 +1,21 @@
 # Tshaeno brand
 
-Tshaeno puts the right signature at the end of every email, for teams of 2 to 10,000 and more. The brand is built to match: deep navy, teal, one sharp accent, neutral greys and strong type. It works in light and dark, and it is designed for the phone first.
+Tshaeno puts the right signature at the end of every email, for teams of 2 to 10,000 and more. The brand is built to read as an established firm: midnight navy, a champagne accent used sparingly, warm stone neutrals, a serif for headlines and a handwritten wordmark, because a signature is the thing we make.
 
-## The mark
+## The wordmark and mark
 
-A rounded navy tile holds a lowercase t. The crossbar is teal, the stem sweeps into a short white signature stroke, and a Signal orange dot closes it like the full stop at the end of a message. The mark is drawn on a 48 by 48 grid with 6 unit strokes.
+The wordmark is "Tshaeno" in a flowing script (Great Vibes, converted to outlines, so it never depends on a font being installed). It is always set in one colour: midnight on light, white or champagne on dark.
+
+The mark is the script T on its own, in champagne on a rounded midnight tile. Use it where the wordmark won't fit: the browser tab, app icons, avatars.
 
 ## Files
 
 | File | Use it on |
 | --- | --- |
 | `logo/mark.svg` | Light backgrounds (navy tile) |
-| `logo/mark-dark.svg` | Dark backgrounds (Navy 700 tile, so it separates from Navy 950) |
+| `logo/mark-dark.svg` | Dark backgrounds (a lighter tile, so it separates from the page) |
 | `logo/mark-mono.svg` | One colour print, embossing, watermarks. Uses `currentColor` |
-| `logo/wordmark.svg` | Light backgrounds, Navy 900 |
+| `logo/wordmark.svg` | Light backgrounds, midnight |
 | `logo/wordmark-dark.svg` | Dark backgrounds, white |
 | `logo/lockup.svg` | Default logo on light backgrounds |
 | `logo/lockup-dark.svg` | Default logo on dark backgrounds |
@@ -23,44 +25,44 @@ A rounded navy tile holds a lowercase t. The crossbar is teal, the stem sweeps i
 | `tokens.json` | Palette, light and dark semantic tokens, type scale |
 | `icons/*.svg` | Product icons, 24 by 24, 1.75 stroke, `currentColor` |
 
-On photography or busy colour, use the mark or lockup on a solid panel. Never place the light lockup on Navy 950.
+On photography or busy colour, use the mark or lockup on a solid panel. Never place the light lockup on a dark page.
 
 ## Clear space and minimum size
 
-- Clear space around the mark and the lockup is one quarter of the mark height (12 units on the 48 grid). Keep text, edges and other logos out of it.
-- Minimum size: mark 16 px, lockup 20 px tall, wordmark alone 12 px tall.
-- Do not recolour, rotate, outline, add shadows or stretch any logo file. Do not move the orange dot.
-- The wordmark is always lowercase: tshaeno. In running text, write the name as Tshaeno.
+- Clear space around the mark and the lockup is one quarter of the mark height. Keep text, edges and other logos out of it.
+- Minimum size: mark 16 px, lockup 24 px tall, wordmark alone 20 px tall. Script loses its detail below that.
+- Do not recolour, rotate, outline, add shadows or stretch any logo file. Never retype the wordmark in another script font.
+- In running text, write the name as Tshaeno.
 
 ## Colour roles
 
 | Role | Light | Dark |
 | --- | --- | --- |
-| Brand ink, headings | Navy 900 `#0B1F3A` | `#E8EEF5` |
-| Brand, buttons, focus | Teal 600 `#0B7F78` | Teal 400 `#2EC4B6` |
-| Brand tint | Teal 100 `#DDF4F1` | `#0E3A3B` |
-| Accent | Signal `#FF5B2E` | `#FF7A55` |
-| Page | Grey `#F6F7F9` | Navy 950 `#07121F` |
+| Ink, headings | Midnight 900 `#11182B` | `#EEEBE5` |
+| Brand, buttons | Midnight 800 `#14213D` | Champagne 300 `#D9BC85` |
+| Links, focus | Midnight 600 `#2B4A86` | `#E0C690` |
+| Accent | Champagne 700 `#8A6A2F` | Champagne 300 `#D9BC85` |
+| Page | Stone 50 `#F7F5F1` | Midnight 950 `#0A0D14` |
 
-Signal orange is the one sharp accent. Use it for the dot in the mark and for one key highlight per screen at most, such as a live badge or a single figure that matters. Never use it for body text, error states or large fills. Teal 600 passes AA on white for text and controls. Teal 400 is for dark surfaces only.
+Champagne is the accent, used in small amounts: a thin rule above a heading, a step number, a check mark. Never use it for large fills or body text on light pages. Champagne 700 passes AA on white for text. On dark pages, buttons turn champagne with dark text.
 
 The full semantic set (surface-0, surface-1, surface-2, border, border-strong, ink, ink-muted, brand, on-brand, brand-soft, accent, link, positive, negative, warning, focus) is in `tokens.json` and matches the app CSS.
 
 ## Type
 
-Geist Sans for interface and headings, Geist Mono for code, IDs, DNS records and data. Headings use semibold 600 or bold 700 with tight tracking.
+Instrument Serif for display headlines on the website and sign-in pages. Instrument Sans for everything else, interface included. Geist Mono for code, IDs, DNS records and data. Serif headlines are set at regular weight with slightly tight tracking; never bold them.
 
-| Style | Size / line | Weight | Tracking |
+| Style | Size / line | Font | Weight |
 | --- | --- | --- | --- |
-| display | 40 / 48 | 700 | -0.02em |
-| title-1 | 28 / 36 | 700 | -0.015em |
-| title-2 | 22 / 28 | 600 | -0.01em |
-| headline | 17 / 24 | 600 | -0.005em |
-| body | 15 / 24 | 400 | 0 |
-| callout | 13 / 20 | 400 | 0 |
-| caption | 12 / 16 | 500 | 0.01em |
+| website display | 54 / 58 (40 / 44 on phones) | Instrument Serif | 400 |
+| title-1 | 28 / 36 | Instrument Sans | 700 |
+| title-2 | 22 / 28 | Instrument Sans | 600 |
+| headline | 17 / 24 | Instrument Sans | 600 |
+| body | 15 / 24 | Instrument Sans | 400 |
+| callout | 13 / 20 | Instrument Sans | 400 |
+| caption | 12 / 16 | Instrument Sans | 500 |
 
-On phones, display steps down to title-1. Body text never goes below 15 px.
+Body text never goes below 15 px.
 
 ## Icons
 

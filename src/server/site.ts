@@ -1,15 +1,15 @@
 import type { Currency } from "@prisma/client";
-import { renderSignature } from "@/lib/signature/render";
-import type { SignatureDoc } from "@/lib/signature/types";
-import { type Palette, type SampleInput, sampleBrand, samplePerson } from "@/lib/site/samples";
+import type { Starter } from "@/lib/signature/starters";
+import { type PreviewInput, previewHtml } from "@/lib/site/preview";
+import type { Palette } from "@/lib/site/samples";
 import type { Price } from "@/lib/billing/plans";
 import { asSystem } from "@/server/db";
 import { env } from "@/server/env";
 import { origin } from "@/server/signatures/studio-data";
 
-/** A template filled in with a made-up company, for the website. */
-export function sampleHtml(doc: SignatureDoc, p: Palette, input: SampleInput = {}): string {
-  return renderSignature(doc, { brand: sampleBrand(p, input), person: samplePerson(p, input), assets: {}, origin: origin() }).html;
+/** A starter filled in with the made-up company for its industry, for the website. */
+export function sampleHtml(s: Starter, p: Palette, input: PreviewInput = {}): string {
+  return previewHtml(s.doc, p, origin(), { industry: s.industry, graphic: s.graphic ? "sample" : null, ...input });
 }
 
 /** The public price list in one currency. Prices aren't tenant data, so this reads them as the system. */

@@ -2,13 +2,14 @@ import Link from "next/link";
 import { Card, CardHeader } from "@/components/ui/card";
 import { inputClass } from "@/components/ui/field";
 import { PageHeader } from "@/components/ui/page-header";
+import { recentDemoRequests } from "@/server/demo";
 import { listOrganisations, onboardingStats } from "@/server/platform/service";
 import { requireStaff } from "./staff";
 
 export default async function AdminHome({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
   const staff = await requireStaff();
   const q = (await searchParams).q ?? "";
-  const [orgs, stats] = await Promise.all([listOrganisations(staff, q), onboardingStats(staff)]);
+  const [orgs, stats, demos] = await Promise.all([listOrganisations(staff, q), onboardingStats(staff), recentDemoRequests(staff)]);
   const day = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" });
   return (
     <div className="flex flex-col gap-6">
@@ -50,6 +51,30 @@ export default async function AdminHome({ searchParams }: { searchParams: Promis
           </div>
         ) : null}
       </Card>
+      {demos.length ? (
+        <Card>
+          <CardHeader title="Demo requests">From the website, newest first. Each one was also emailed to the sales inbox when one is set.</CardHeader>
+          <ul className="flex flex-col divide-y divide-border text-callout">
+            {demos.map((d) => (
+              <li key={d.id} className="flex flex-col gap-0.5 py-2.5">
+                <span className="flex flex-wrap gap-x-4">
+                  <span className="font-semibold text-ink">{d.company}</span>
+                  <span className="text-ink">
+                    {d.name},{" "}
+                    <a href={`mailto:${d.email}`} className="text-link hover:underline">
+                      {d.email}
+                    </a>
+                    {d.phone ? `, ${d.phone}` : ""}
+                  </span>
+                  <span className="text-ink-muted">about {d.people.toLocaleString("en")} people</span>
+                  <span className="text-ink-muted">{day.format(d.createdAt)}</span>
+                </span>
+                {d.message ? <span className="text-ink-muted">{d.message}</span> : null}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
       <form className="flex gap-3 sm:max-w-[480px]" role="search">
         <label htmlFor="q" className="sr-only">Search by name</label>
         <input id="q" name="q" defaultValue={q} placeholder="Search by name" className={inputClass} />

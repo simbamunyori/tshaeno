@@ -63,7 +63,7 @@ export function PhotoForm({ id, hasPhoto }: { id: string; hasPhoto: boolean }) {
       <input type="hidden" name="id" value={id} />
       {state.ok ? <Alert tone="positive">{state.ok}</Alert> : state.error ? <Alert>{state.error}</Alert> : null}
       <Field id="file" label="Photo" error={state.fieldErrors?.file} hint="A square crop is made around the face. PNG, JPEG or GIF.">
-        {(describedBy, invalid) => <input id="file" name="file" type="file" accept="image/png,image/jpeg,image/gif" aria-describedby={describedBy} aria-invalid={invalid || undefined} className="text-callout text-ink" />}
+        {(describedBy, invalid) => <input id="file" name="file" type="file" accept="image/png,image/jpeg,image/gif,image/webp" aria-describedby={describedBy} aria-invalid={invalid || undefined} className="text-callout text-ink" />}
       </Field>
       <div className="flex flex-wrap gap-3">
         <Button type="submit" size="sm" disabled={pending}>

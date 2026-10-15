@@ -1,7 +1,7 @@
 import { Check, Minus } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Section } from "@/components/site/section";
+import { Display, Eyebrow, Section } from "@/components/site/section";
 import { Button } from "@/components/ui/button";
 import { FREE_PEOPLE } from "@/lib/billing/plans";
 
@@ -65,12 +65,11 @@ const ROWS: Row[] = [
 export default function ComparePage() {
   return (
     <>
-      <Section className="pt-10 sm:pt-16">
-        <div className="mb-10 flex max-w-[720px] flex-col gap-3">
-          <h1 className="text-[34px] leading-[40px] font-bold tracking-[-0.03em] text-ink text-balance sm:text-[44px] sm:leading-[50px]">
-            Tshaeno or the built-in signature
-          </h1>
-          <p className="text-[17px] leading-7 text-ink-muted">
+      <Section className="pt-14 sm:pt-20">
+        <div className="mb-14 flex max-w-[760px] flex-col gap-5">
+          <Eyebrow>Compare</Eyebrow>
+          <Display as="h1">Tshaeno or the signature built into Gmail and Outlook</Display>
+          <p className="text-[18px] leading-[30px] text-ink-muted">
             Gmail and Outlook both let each person write a signature. That works for one person. For a team, it means every signature is a little different and
             nobody owns keeping them right.
           </p>
@@ -83,10 +82,10 @@ export default function ComparePage() {
               <th scope="col" className="w-[22%] py-3 pr-6 text-callout font-semibold text-ink-muted">
                 <span className="sr-only">Topic</span>
               </th>
-              <th scope="col" className="w-[39%] py-3 pr-6 text-headline text-ink">
+              <th scope="col" className="w-[39%] py-4 pr-6 font-display text-[26px] font-normal text-ink">
                 Tshaeno
               </th>
-              <th scope="col" className="py-3 text-headline text-ink">
+              <th scope="col" className="py-4 font-display text-[26px] font-normal text-ink">
                 Built-in Gmail and Outlook
               </th>
             </tr>
@@ -99,7 +98,7 @@ export default function ComparePage() {
                 </th>
                 <td className="py-5 pr-6 max-md:p-0">
                   <span className="flex gap-3 text-body text-ink">
-                    <Check aria-hidden className="mt-1 size-4 shrink-0 text-positive" />
+                    <Check aria-hidden className="mt-1 size-4 shrink-0 text-accent" strokeWidth={2.5} />
                     <span>
                       <span className="font-semibold md:sr-only">Tshaeno: </span>
                       {r.tshaeno}
@@ -121,17 +120,17 @@ export default function ComparePage() {
         </table>
       </Section>
 
-      <Section className="bg-surface-1" inner="flex flex-col items-start gap-4">
-        <h2 className="text-title-2 text-ink">Already have signatures people like?</h2>
-        <p className="max-w-[640px] text-body text-ink-muted">
+      <Section className="bg-surface-1" inner="flex flex-col items-start gap-6">
+        <Display>Already have a signature people like?</Display>
+        <p className="max-w-[640px] text-[18px] leading-[30px] text-ink-muted">
           Paste one into the studio as HTML and we turn it into a signature for everyone, with each person&apos;s details filled in.
         </p>
         <div className="flex flex-wrap gap-3">
           <Button asChild size="lg">
-            <Link href="/sign-up">Start free</Link>
+            <Link href="/sign-up">Start your free trial</Link>
           </Button>
           <Button asChild size="lg" variant="secondary">
-            <Link href="/templates">See the templates</Link>
+            <Link href="/demo">Book a demo</Link>
           </Button>
         </div>
       </Section>

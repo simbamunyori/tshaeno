@@ -70,21 +70,37 @@ export const LIGHT_BACKGROUND = "#ffffff";
  */
 export function darkModeColour(hex: string): string {
   if (contrast(hex, DARK_BACKGROUND) >= 4.5) return normaliseHex(hex);
+  return flipLightness(hex, 0.62, 0.92);
+}
+
+/**
+ * The same for backgrounds: Outlook and the Gmail apps darken a light
+ * panel in dark mode, so the lightened text on it stays readable.
+ * Backgrounds that are already dark, such as a brand-coloured button,
+ * are left alone.
+ */
+export function darkModeBackground(hex: string): string {
+  if (contrast(hex, DARK_BACKGROUND) < 4.5) return normaliseHex(hex);
+  return flipLightness(hex, 0.1, 0.2);
+}
+
+/** Flips a colour's lightness, kept between min and max, and keeps its hue and saturation. */
+function flipLightness(hex: string, min: number, max: number): string {
   const [r, g, b] = channels(hex).map((c) => c / 255);
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  const l = (max + min) / 2;
-  const d = max - min;
+  const hi = Math.max(r, g, b);
+  const lo = Math.min(r, g, b);
+  const l = (hi + lo) / 2;
+  const d = hi - lo;
   let h = 0;
   const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
   if (d !== 0) {
-    if (max === r) h = ((g - b) / d) % 6;
-    else if (max === g) h = (b - r) / d + 2;
+    if (hi === r) h = ((g - b) / d) % 6;
+    else if (hi === g) h = (b - r) / d + 2;
     else h = (r - g) / d + 4;
     h *= 60;
     if (h < 0) h += 360;
   }
-  const nl = Math.min(0.92, Math.max(0.62, 1 - l));
+  const nl = Math.min(max, Math.max(min, 1 - l));
   const c = (1 - Math.abs(2 * nl - 1)) * s;
   const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
   const m = nl - c / 2;

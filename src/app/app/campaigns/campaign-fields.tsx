@@ -38,7 +38,7 @@ export function CampaignFields({
       <ActionFileField
         id="file"
         label={campaign ? "New picture (optional)" : "Banner picture"}
-        accept="image/png,image/jpeg,image/gif"
+        accept="image/png,image/jpeg,image/gif,image/webp"
         hint="PNG, JPEG or GIF. About 1200 by 300 pixels looks sharp on every screen."
       />
       <ActionTextField id="linkUrl" label="Where it goes" type="url" inputMode="url" defaultValue={campaign?.linkUrl} placeholder="https://example.com/offer" />

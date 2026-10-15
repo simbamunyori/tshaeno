@@ -25,6 +25,7 @@ const leaf = z.discriminatedUnion("type", [
     colour: colourRef,
     align,
     uppercase: z.boolean().optional(),
+    serif: z.boolean().optional(),
   }),
   z.object({
     id,
@@ -57,7 +58,7 @@ const leaf = z.discriminatedUnion("type", [
     align,
   }),
   z.object({ id, type: z.literal("spacer"), height: z.number().int().min(2).max(64) }),
-  z.object({ id, type: z.literal("button"), label: short(60), url: short(400), colour: colourRef, textColour: colourRef, rounded: z.boolean(), align }),
+  z.object({ id, type: z.literal("button"), label: short(60), url: short(400), colour: colourRef, textColour: colourRef, rounded: z.boolean(), outline: z.boolean().optional(), align }),
   z.object({ id, type: z.literal("banner"), assetId: short(64).optional(), width: z.number().int().min(100).max(600), link: short(400), alt: short(120), align }),
   z.object({ id, type: z.literal("disclaimer"), size, colour: colourRef, align }),
 ]);
@@ -71,7 +72,10 @@ const columns = z.object({
   gap: z.number().int().min(0).max(40),
   rule: z.boolean(),
   ruleColour: colourRef,
+  ruleWidth: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]).optional(),
   valign: z.enum(["top", "middle"]),
+  background: colourRef.optional(),
+  padding: z.number().int().min(0).max(32).optional(),
 });
 
 export const docSchema = z.object({

@@ -108,7 +108,7 @@ function AssetPicker({ value, kind, assets, onPick, onUpload }: { value?: string
         <input
           ref={input}
           type="file"
-          accept="image/png,image/jpeg,image/gif"
+          accept="image/png,image/jpeg,image/gif,image/webp"
           className="sr-only"
           tabIndex={-1}
           onChange={async (e) => {
@@ -139,6 +139,7 @@ export function Inspector({ block, colours, customFields, assets, onChange, onRe
               <Toggle label="Bold" checked={block.bold} onChange={(bold) => onChange({ bold })} />
               <Toggle label="Italic" checked={block.italic} onChange={(italic) => onChange({ italic })} />
               <Toggle label="Capitals" checked={!!block.uppercase} onChange={(uppercase) => onChange({ uppercase })} />
+              <Toggle label="Serif" checked={!!block.serif} onChange={(serif) => onChange({ serif })} />
             </div>
             <ColourPicker label="Colour" value={block.colour} colours={c} onChange={(colour) => onChange({ colour })} />
             <Segmented label="Alignment" value={block.align} options={ALIGN} onChange={(align) => onChange({ align })} />
@@ -274,6 +275,7 @@ export function Inspector({ block, colours, customFields, assets, onChange, onRe
             <ColourPicker label="Button colour" value={block.colour} colours={c} onChange={(colour) => onChange({ colour })} />
             <ColourPicker label="Label colour" value={block.textColour} colours={c} onChange={(textColour) => onChange({ textColour })} />
             <Toggle label="Rounded corners" checked={block.rounded} onChange={(rounded) => onChange({ rounded })} />
+            <Toggle label="Outline only" checked={!!block.outline} onChange={(outline) => onChange({ outline })} />
             <Segmented label="Alignment" value={block.align} options={ALIGN} onChange={(align) => onChange({ align })} />
           </>
         );
@@ -293,7 +295,24 @@ export function Inspector({ block, colours, customFields, assets, onChange, onRe
             <Slider label="Left column width" value={block.leftWidth} min={40} max={300} onChange={(leftWidth) => onChange({ leftWidth })} />
             <Slider label="Gap" value={block.gap} min={0} max={40} onChange={(gap) => onChange({ gap })} />
             <Toggle label="Line between the columns" checked={block.rule} onChange={(rule) => onChange({ rule })} />
-            {block.rule ? <ColourPicker label="Line colour" value={block.ruleColour} colours={c} onChange={(ruleColour) => onChange({ ruleColour })} /> : null}
+            {block.rule ? (
+              <>
+                <ColourPicker label="Line colour" value={block.ruleColour} colours={c} onChange={(ruleColour) => onChange({ ruleColour })} />
+                <Segmented
+                  label="Line thickness"
+                  value={block.ruleWidth ?? 1}
+                  options={[1, 2, 3, 4].map((v) => ({ value: v as 1 | 2 | 3 | 4, label: `${v}px` }))}
+                  onChange={(ruleWidth) => onChange({ ruleWidth })}
+                />
+              </>
+            ) : null}
+            <Toggle label="Colour panel behind the columns" checked={!!block.background} onChange={(on) => onChange({ background: on ? "secondary" : undefined })} />
+            {block.background ? (
+              <>
+                <ColourPicker label="Panel colour" value={block.background} colours={c} onChange={(background) => onChange({ background })} />
+                <Slider label="Space inside the panel" value={block.padding ?? 14} min={0} max={32} onChange={(padding) => onChange({ padding })} />
+              </>
+            ) : null}
             <Segmented
               label="Line up"
               value={block.valign}

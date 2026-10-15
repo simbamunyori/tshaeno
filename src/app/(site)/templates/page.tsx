@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Section } from "@/components/site/section";
+import { Display, Eyebrow, Section } from "@/components/site/section";
 import { SignatureThumb } from "@/components/signatures/thumb";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
@@ -10,14 +10,14 @@ import { sampleHtml } from "@/server/site";
 
 export const metadata: Metadata = {
   title: "Email signature templates",
-  description: `${STARTERS.length} professional email signature templates by industry, for Gmail and Outlook. See each one in your colours, then use it free.`,
+  description: `${STARTERS.length} email signature templates for Gmail and Outlook, by industry. Try any of them with your own logo, photo and graphics before you sign up.`,
 };
 export const dynamic = "force-dynamic";
 
 const chip = (active: boolean) =>
   cn(
     "inline-flex h-9 items-center rounded-full border px-3.5 text-callout whitespace-nowrap",
-    active ? "border-transparent bg-mark-tile font-semibold text-white" : "border-border bg-surface-1 text-ink hover:border-border-strong",
+    active ? "border-transparent bg-brand font-semibold text-on-brand" : "border-border bg-surface-1 text-ink hover:border-border-strong",
   );
 
 function href(industry: string, colour: string) {
@@ -35,12 +35,13 @@ export default async function TemplatesPage({ searchParams }: { searchParams: Pr
   const shown = STARTERS.filter((s) => !industry || s.industry === industry);
 
   return (
-    <Section className="pt-10 sm:pt-16">
-      <div className="mb-8 flex max-w-[720px] flex-col gap-3">
-        <h1 className="text-[34px] leading-[40px] font-bold tracking-[-0.03em] text-ink sm:text-[44px] sm:leading-[50px]">Email signature templates</h1>
-        <p className="text-[17px] leading-7 text-ink-muted">
-          {STARTERS.length} templates, tested in Outlook, Gmail and Apple Mail. Each one takes on your logo and colours, and every person&apos;s details fill in from
-          your directory.
+    <Section className="pt-14 sm:pt-20">
+      <div className="mb-12 flex max-w-[760px] flex-col gap-5">
+        <Eyebrow>Templates</Eyebrow>
+        <Display as="h1">Start from a design. Make it entirely yours.</Display>
+        <p className="text-[18px] leading-[30px] text-ink-muted">
+          {STARTERS.length} templates, each tested in Outlook, Gmail and Apple Mail. Open one to try it with your own logo, photo and graphics. Your people&apos;s
+          names and numbers fill in from your directory once you sign up.
         </p>
       </div>
 
@@ -62,7 +63,7 @@ export default async function TemplatesPage({ searchParams }: { searchParams: Pr
           </ul>
         </nav>
         <div className="flex flex-wrap items-center gap-3">
-          <span className="text-callout text-ink-muted">Shown in</span>
+          <span className="text-callout text-ink-muted">Preview in</span>
           <ul className="flex gap-2">
             {PALETTES.map((c) => (
               <li key={c.key}>
@@ -70,7 +71,8 @@ export default async function TemplatesPage({ searchParams }: { searchParams: Pr
                   href={href(industry, c.key)}
                   aria-label={c.name}
                   aria-current={c.key === p.key ? "true" : undefined}
-                  className={cn("block size-8 rounded-full border-2", c.key === p.key ? "border-ink" : "border-transparent")}
+                  title={c.name}
+                  className={cn("block size-7 rounded-full ring-offset-2 ring-offset-surface-0", c.key === p.key ? "ring-2 ring-ink" : "")}
                   style={{ background: c.primary }}
                 />
               </li>
@@ -84,13 +86,13 @@ export default async function TemplatesPage({ searchParams }: { searchParams: Pr
           <li key={s.key}>
             <Link
               href={`/templates/${s.key}${p.key === PALETTES[0].key ? "" : `?colour=${p.key}`}`}
-              className="group flex h-full flex-col gap-4 rounded-lg border border-border bg-surface-1 p-4 hover:border-border-strong sm:p-5"
+              className="group flex h-full flex-col gap-5 rounded-xl border border-border bg-surface-1 p-4 transition-colors hover:border-border-strong sm:p-5"
             >
-              <SignatureThumb html={sampleHtml(s.doc, p)} title={s.name} />
+              <SignatureThumb html={sampleHtml(s, p)} title={s.name} />
               <span className="flex flex-col gap-1">
                 <span className="flex flex-wrap items-baseline justify-between gap-2">
-                  <span className="text-headline text-ink group-hover:underline">{s.name}</span>
-                  <span className="text-caption font-semibold tracking-wide text-ink-muted uppercase">{s.industry}</span>
+                  <span className="font-display text-[26px] leading-8 text-ink">{s.name}</span>
+                  <span className="text-[12px] font-semibold tracking-[0.14em] text-ink-muted uppercase">{s.industry}</span>
                 </span>
                 <span className="text-callout text-ink-muted">{s.description}</span>
               </span>
@@ -99,13 +101,13 @@ export default async function TemplatesPage({ searchParams }: { searchParams: Pr
         ))}
       </ul>
 
-      <div className="mt-12 flex flex-col items-start gap-4 rounded-lg border border-border bg-surface-1 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
-        <div>
-          <h2 className="text-title-2 text-ink">Have a design already?</h2>
-          <p className="text-body text-ink-muted">Paste your designer&apos;s HTML in the studio. We check it against every major mail app as you go.</p>
+      <div className="mt-16 flex flex-col items-start gap-6 rounded-xl bg-brand p-8 text-on-brand sm:flex-row sm:items-center sm:justify-between sm:p-10">
+        <div className="flex max-w-[640px] flex-col gap-2">
+          <h2 className="font-display text-[32px] leading-[38px]">Already have a signature you like?</h2>
+          <p className="text-[16px] leading-7 opacity-80">Paste the HTML your designer made into the studio. We check it against Outlook, Gmail and Apple Mail as you go and tell you what to fix.</p>
         </div>
-        <Button asChild size="lg">
-          <Link href="/sign-up">Start free</Link>
+        <Button asChild size="lg" variant="secondary" className="shrink-0 border-transparent">
+          <Link href="/sign-up">Start your free trial</Link>
         </Button>
       </div>
     </Section>

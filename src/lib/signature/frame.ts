@@ -1,4 +1,4 @@
-import { DARK_BACKGROUND, darkModeColour } from "./style";
+import { DARK_BACKGROUND, darkModeBackground, darkModeColour } from "./style";
 
 /**
  * The page a signature preview shows: a short greeting above the
@@ -7,7 +7,9 @@ import { DARK_BACKGROUND, darkModeColour } from "./style";
  * page, so what they check is what people see.
  */
 export function toDark(html: string): string {
-  return html.replace(/(^|[;"\s])color:\s*(#[0-9a-fA-F]{6})/g, (_, pre: string, hex: string) => `${pre}color:${darkModeColour(hex)}`);
+  return html
+    .replace(/(^|[;"\s])color:\s*(#[0-9a-fA-F]{6})/g, (_, pre: string, hex: string) => `${pre}color:${darkModeColour(hex)}`)
+    .replace(/(background-color:\s*|bgcolor=")(#[0-9a-fA-F]{6})/g, (_, pre: string, hex: string) => `${pre}${darkModeBackground(hex)}`);
 }
 
 export function frameDoc(html: string, dark: boolean): string {
