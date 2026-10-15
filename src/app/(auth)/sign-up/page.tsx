@@ -12,7 +12,7 @@ export default async function SignUpPage() {
   if (session?.stage === "ACTIVE") redirect("/app");
   return (
     <AuthShell title="Signatures for the whole team, in minutes.">
-      <SignUpForm providers={enabledProviders()} />
+      <SignUpForm providers={{ ...enabledProviders(), fourthgen: false }} />
     </AuthShell>
   );
 }

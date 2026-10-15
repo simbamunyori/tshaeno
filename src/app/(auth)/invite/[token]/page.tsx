@@ -24,7 +24,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
       found.state === "ACCEPTED"
         ? "This invitation has already been accepted. Sign in to continue."
         : found.state === "EXPIRED"
-          ? `This invitation expired. Ask ${found.invitation.invitedBy.user.name.split(" ")[0]} to send it again.`
+          ? `This invitation expired. Ask ${(found.invitation.invitedBy?.user.name.split(" ")[0] ?? found.invitation.invitedByLabel ?? "whoever sent it")} to send it again.`
           : found.state === "REVOKED"
             ? "This invitation was withdrawn. Ask the person who invited you if you still need access."
             : "This link doesn't work. It may be an older invitation that was sent again, or it was cut short when copied. Use the newest email.";
@@ -43,7 +43,7 @@ export default async function InvitePage({ params }: { params: Promise<{ token: 
 
   const inv = found.invitation;
   const role = ROLE_LABEL[inv.role].toLowerCase();
-  const inviter = inv.invitedBy.user.name;
+  const inviter = (inv.invitedBy?.user.name ?? inv.invitedByLabel ?? "Tshaeno");
   const signedIn = session?.stage === "ACTIVE" ? session : null;
 
   return (

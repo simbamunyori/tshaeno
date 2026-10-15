@@ -22,6 +22,10 @@ const schema = z.object({
   /** Sign in with Microsoft: a multi-tenant app registration in Entra ID. */
   MICROSOFT_CLIENT_ID: optional(z.string()),
   MICROSOFT_CLIENT_SECRET: optional(z.string()),
+  /** Sign in from the Fourth Generation console: its OpenID Connect issuer and a client registered there. */
+  FOURTHGEN_OIDC_ISSUER: optional(z.string().url()),
+  FOURTHGEN_CLIENT_ID: optional(z.string()),
+  FOURTHGEN_CLIENT_SECRET: optional(z.string()),
   /**
    * Connecting Google Workspace: our service account's JSON key, as is or
    * base64 encoded. Customers trust its client id with domain-wide delegation.

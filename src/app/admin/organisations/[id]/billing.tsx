@@ -5,7 +5,7 @@ import type { StaffMember } from "@/server/platform/service";
 import { organisationBilling } from "@/server/platform/service";
 import { bankPaymentAction, customPriceAction, extendTrialAction, voidInvoiceAction } from "../../actions";
 
-const STATUS = { TRIALING: "Trial", FREE: "Free", ACTIVE: "Paid", PAST_DUE: "Renewal overdue" } as const;
+const STATUS = { TRIALING: "Trial", FREE: "Free", ACTIVE: "Paid", PAST_DUE: "Renewal overdue", CANCELLED: "Cancelled" } as const;
 
 /** The organisation's plan and invoices, with what staff can do about them. */
 export async function BillingSection({ staff, organisationId, timeZone }: { staff: StaffMember; organisationId: string; timeZone: string }) {

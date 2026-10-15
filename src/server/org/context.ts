@@ -29,7 +29,12 @@ export const requireMember = cache(async () => {
         select: { organisationId: true },
       }),
     );
-    if (!other) redirect("/welcome");
+    if (!other) {
+      const paused = await asUser(session.userId, (tx) =>
+        tx.membership.count({ where: { userId: session.userId, active: true, organisation: { status: "SUSPENDED" } } }),
+      );
+      redirect(paused ? "/suspended" : "/welcome");
+    }
     await prisma.session.update({ where: { id: session.id }, data: { activeOrganisationId: other.organisationId } });
     redirect("/app");
   }

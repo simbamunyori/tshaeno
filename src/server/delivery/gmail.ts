@@ -1,4 +1,5 @@
 import type { PrismaClient } from "@prisma/client";
+import { isLive, LIVE_ORGANISATION } from "@/server/billing/live";
 import { appOrigin } from "@/server/env";
 import { asSystem, asTenant } from "@/server/db";
 import { ProviderError } from "@/server/connections/http";
@@ -37,6 +38,7 @@ async function googleFor(organisationId: string, db?: PrismaClient) {
 export async function planGmail(organisationId: string, opts: Opts & { force?: boolean } = {}): Promise<string[]> {
   const conn = await googleFor(organisationId, opts.db);
   if (!conn?.pushEnabled || conn.status === "PENDING") return [];
+  if (!(await asSystem((tx) => isLive(tx, organisationId), opts.db))) return [];
   const origin = opts.origin ?? appOrigin().origin;
   return asTenant(
     organisationId,
@@ -133,6 +135,6 @@ export async function pushGmail(organisationId: string, personId: string, opts: 
 
 /** Organisations pushing to Gmail, for the nightly pass. */
 export async function gmailOrganisations(db?: PrismaClient): Promise<string[]> {
-  const rows = await asSystem((tx) => tx.directoryConnection.findMany({ where: { provider: "GOOGLE", pushEnabled: true, status: { not: "PENDING" } }, select: { organisationId: true } }), db);
+  const rows = await asSystem((tx) => tx.directoryConnection.findMany({ where: { provider: "GOOGLE", pushEnabled: true, status: { not: "PENDING" }, organisation: LIVE_ORGANISATION }, select: { organisationId: true } }), db);
   return rows.map((r) => r.organisationId);
 }

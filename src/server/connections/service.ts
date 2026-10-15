@@ -1,4 +1,5 @@
 import { Prisma, type ConnectionProvider, type DirectoryConnection, type PrismaClient } from "@prisma/client";
+import { isLive, LIVE_ORGANISATION } from "@/server/billing/live";
 import { looksLikeEmail, normaliseEmail } from "@/server/auth/service";
 import { asSystem, asTenant, type Tx } from "@/server/db";
 import { DomainError, assertCan, type Actor } from "@/server/org/access";
@@ -257,6 +258,7 @@ export type SyncOutcome = { ok: true; organisationId: string; result: SyncResult
 export async function syncConnection(connectionId: string, providers: Providers = realProviders, db?: PrismaClient): Promise<SyncOutcome> {
   const c = await asSystem((tx) => tx.directoryConnection.findUnique({ where: { id: connectionId } }), db);
   if (!c) return { ok: false, message: "The connection was removed.", retryable: false };
+  if (!(await asSystem((tx) => isLive(tx, c.organisationId), db))) return { ok: false, message: "This organisation is suspended or its plan has ended.", retryable: false };
   const fail = async (message: string, retryable: boolean): Promise<SyncOutcome> => {
     await asSystem((tx) => tx.directoryConnection.update({ where: { id: c.id }, data: { lastSyncError: message, lastSyncAt: new Date(), ...(retryable ? {} : { status: "ERROR" as const }) } }), db);
     return { ok: false, message, retryable };
@@ -301,7 +303,7 @@ export async function dueForSync(now = new Date(), db?: PrismaClient): Promise<s
   const rows = await asSystem(
     (tx) =>
       tx.directoryConnection.findMany({
-        where: { syncEnabled: true, status: { in: ["CONNECTED", "ERROR"] }, OR: [{ lastSyncAt: null }, { lastSyncAt: { lt: before } }] },
+        where: { syncEnabled: true, status: { in: ["CONNECTED", "ERROR"] }, organisation: LIVE_ORGANISATION, OR: [{ lastSyncAt: null }, { lastSyncAt: { lt: before } }] },
         select: { id: true },
       }),
     db,

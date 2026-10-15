@@ -88,7 +88,7 @@ export default async function OverviewPage({ searchParams }: { searchParams: Pro
         </ol>
       </Card>
       <Card>
-        <CardHeader title="Coming next">A partner API, so Tshaeno can be bought through the Fourth Generation marketplace, then campaigns and analytics.</CardHeader>
+        <CardHeader title="Coming next">Campaign banners in signatures, with click tracking, and reports on how signatures are doing.</CardHeader>
       </Card>
     </div>
   );

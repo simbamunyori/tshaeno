@@ -75,7 +75,7 @@ export default async function TeamPage() {
                   <span className="flex min-w-0 flex-1 flex-col">
                     <span className="truncate font-semibold text-ink">{inv.email}</span>
                     <span className="text-callout text-ink-muted">
-                      {ROLE_LABEL[inv.role]} · invited by {inv.invitedBy.user.name} ·{" "}
+                      {ROLE_LABEL[inv.role]} · invited by {(inv.invitedBy?.user.name ?? inv.invitedByLabel ?? "Tshaeno")} ·{" "}
                       {expired ? "expired" : `works until ${day(inv.expiresAt, organisation.timeZone)}`}
                     </span>
                   </span>

@@ -52,7 +52,7 @@ export async function render(db: PrismaClient, row: OutboundEmail): Promise<Rend
       await tx.invitation.update({ where: { id: inv.id }, data: { tokenHash } });
       return invitation({
         organisation: inv.organisation.name,
-        inviter: inv.invitedBy.user.name,
+        inviter: (inv.invitedBy?.user.name ?? inv.invitedByLabel ?? "Tshaeno"),
         role: ROLE_LABEL[inv.role],
         url: `${base}/invite/${token}`,
       });

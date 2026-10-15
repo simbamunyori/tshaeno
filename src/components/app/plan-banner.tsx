@@ -7,7 +7,18 @@ import { activePeople, subscriptionOf, summarise } from "@/server/billing/servic
 /** A line at the top of every page when the plan needs attention: a trial ending soon, an unpaid renewal, or too many people for free. */
 export async function PlanBanner({ organisationId }: { organisationId: string }) {
   const { sub, people } = await asTenant(organisationId, async (tx) => ({ sub: await subscriptionOf(tx, organisationId), people: await activePeople(tx) }));
-  if (sub.billedBy === "PARTNER") return null;
+  if (sub.billedBy === "PARTNER") {
+    if (sub.status !== "CANCELLED") return null;
+    return (
+      <div role="status" className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg bg-negative-soft px-4 py-3 text-callout text-ink print:hidden">
+        <CreditCard aria-hidden className="size-5 shrink-0 text-negative" />
+        <p className="min-w-0 flex-1">Your plan has ended, so signatures are no longer kept up to date.</p>
+        <Link href="/app/billing" className="font-semibold text-link hover:underline">
+          See your plan
+        </Link>
+      </div>
+    );
+  }
   const s = summarise(sub, people);
   let text: string | null = null;
   if (s.status === "TRIALING" && s.trialDaysLeft !== null && s.trialDaysLeft <= 3) {
