@@ -7,6 +7,7 @@ import { env } from "@/server/env";
 import { DomainError, assertCan, type Actor } from "@/server/org/access";
 import { audit } from "@/server/org/audit";
 import { processImage, saveAsset } from "@/server/signatures/assets";
+import { requirePremium } from "@/server/billing/premium";
 
 /**
  * Campaign banners: a picture and a link added under signatures for a
@@ -156,6 +157,7 @@ export async function saveCampaign(ctx: Ctx, campaignId: string | null, input: C
   return asTenant(
     ctx.organisationId,
     async (tx) => {
+      await requirePremium(tx, ctx.organisationId, "campaigns");
       const before = campaignId ? await tx.campaign.findFirst({ where: { id: campaignId } }) : null;
       if (campaignId && !before) throw new DomainError("not-found", "That campaign doesn't exist.");
       if (!before && !img) throw new DomainError("invalid", "Choose the banner picture.", "file");
@@ -177,6 +179,7 @@ export async function setPaused(ctx: Ctx, campaignId: string, paused: boolean) {
   await asTenant(
     ctx.organisationId,
     async (tx) => {
+      if (!paused) await requirePremium(tx, ctx.organisationId, "campaigns");
       const c = await tx.campaign.findFirst({ where: { id: campaignId } });
       if (!c) throw new DomainError("not-found", "That campaign doesn't exist.");
       await tx.campaign.update({ where: { id: c.id }, data: { pausedAt: paused ? now : null, ...(paused ? {} : pushMarks(c, now)) } });

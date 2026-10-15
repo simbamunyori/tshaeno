@@ -32,15 +32,17 @@ export default async function BillingPage() {
       <PageHeader eyebrow={organisation.name} title="Plan and billing" />
 
       <Card>
-        <CardHeader title={partner && partnerName ? `${TIER_LABEL[sub.tier]}, through ${partnerName}` : summary.label}>
+        <CardHeader title={partner && sub.package === "SIGNATURES" ? `Free signatures, through ${partnerName ?? "your provider"}` : partner && partnerName ? `${TIER_LABEL[sub.tier]}, through ${partnerName}` : summary.label}>
           {partner
             ? sub.status === "CANCELLED"
               ? `Your plan through ${partnerName ?? "your provider"} has ended. You can still sign in and look, but Tshaeno no longer syncs your directory or applies signatures. To start again, ask ${partnerName ?? "them"}.`
-              : `${partnerName ?? "Your provider"} bills you for Tshaeno, for ${sub.seats} ${sub.seats === 1 ? "person" : "people"}. To change your plan, ask them.`
+              : sub.package === "SIGNATURES"
+                ? `Email signatures are free for everyone whose email ${partnerName ?? "your provider"} hosts. Campaigns, reports, Claude, meeting backgrounds and out-of-office messages are part of the full plan, which ${partnerName ?? "they"} can move you to.`
+                : `${partnerName ?? "Your provider"} bills you for Tshaeno, for ${sub.seats} ${sub.seats === 1 ? "person" : "people"}. To change your plan, ask them.`
             : sub.status === "TRIALING"
               ? `Everything works during the trial. ${summary.trialDaysLeft === 0 ? "It ends today." : `${summary.trialDaysLeft} ${summary.trialDaysLeft === 1 ? "day" : "days"} left, until ${day.format(sub.trialEndsAt!)}.`} After that, up to ${FREE_PEOPLE} people keep their signatures for free, with a small Signature by Tshaeno link.`
               : sub.status === "FREE"
-                ? `Free for up to ${FREE_PEOPLE} people. Signatures carry a small Signature by Tshaeno link, which a paid plan removes.`
+                ? `Free for up to ${FREE_PEOPLE} people. Signatures carry a small Signature by Tshaeno link, which a paid plan removes. A paid plan also adds campaigns, reports, Claude, meeting backgrounds and out-of-office messages.`
                 : sub.status === "PAST_DUE"
                   ? `Your plan ended on ${day.format(sub.periodEnd!)} and the renewal isn't paid yet. Everything keeps working for now.`
                   : `${sub.seats} people, until ${day.format(sub.periodEnd!)}. It renews then.`}

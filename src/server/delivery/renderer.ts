@@ -7,6 +7,7 @@ import { clickUrl, liveCampaigns, type LiveCampaign } from "@/server/campaigns/s
 import { assetUrl } from "@/server/signatures/assets";
 import { renderHtmlSignature } from "@/lib/signature/html-mode";
 import { badgeFor } from "@/server/billing/badge";
+import { premiumFor } from "@/server/billing/premium";
 import { renderSignature, type Rendered } from "@/lib/signature/render";
 import { signatureFor, type EmailContext, type Rule } from "@/lib/signature/rules";
 import type { BrandData, TemplateContent } from "@/lib/signature/types";
@@ -72,7 +73,8 @@ export class OrgRenderer {
       t.content.kind === "HTML"
         ? renderHtmlSignature(t.content.html, { brand: t.brand, person: data })
         : renderSignature(t.content.doc, { brand: t.brand, person: data, assets: t.assets, origin: this.origin });
-    this.campaigns ??= liveCampaigns(this.tx, this.now);
+    // Campaigns are a premium feature: free signatures go out without them.
+    this.campaigns ??= premiumFor(this.tx, this.organisationId).then((ok) => (ok ? liveCampaigns(this.tx, this.now) : []));
     const campaign = campaignFor(person, await this.campaigns, ctx, this.now);
     const withCampaign = campaign
       ? withBanner(signature, {

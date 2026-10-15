@@ -3,7 +3,7 @@ import { Card, CardHeader } from "@/components/ui/card";
 import { TIER_LABEL, formatMoney } from "@/lib/billing/plans";
 import type { StaffMember } from "@/server/platform/service";
 import { organisationBilling } from "@/server/platform/service";
-import { bankPaymentAction, customPriceAction, extendTrialAction, voidInvoiceAction } from "../../actions";
+import { bankPaymentAction, customPriceAction, extendTrialAction, packageAction, voidInvoiceAction } from "../../actions";
 
 const STATUS = { TRIALING: "Trial", FREE: "Free", ACTIVE: "Paid", PAST_DUE: "Renewal overdue", CANCELLED: "Cancelled" } as const;
 
@@ -15,7 +15,7 @@ export async function BillingSection({ staff, organisationId, timeZone }: { staf
   const open = invoices.filter((i) => i.status === "OPEN");
   return (
     <Card>
-      <CardHeader title={`Plan: ${STATUS[sub.status]}${sub.billedBy === "PARTNER" ? ", billed by partner" : ""}`}>
+      <CardHeader title={`Plan: ${STATUS[sub.status]}${sub.billedBy === "PARTNER" ? `, billed by partner, ${sub.package === "SIGNATURES" ? "free signatures only" : "full plan"}` : ""}`}>
         {sub.status === "TRIALING" && sub.trialEndsAt ? `Trial until ${day.format(sub.trialEndsAt)}. ` : ""}
         {sub.status === "ACTIVE" || sub.status === "PAST_DUE"
           ? `${TIER_LABEL[sub.tier]}, ${sub.seats} people, ${sub.interval === "ANNUAL" ? "yearly" : "monthly"} in ${sub.currency}, until ${sub.periodEnd ? day.format(sub.periodEnd) : "?"}. `
@@ -50,6 +50,15 @@ export async function BillingSection({ staff, organisationId, timeZone }: { staf
         ))}
 
         <div className="grid gap-6 md:grid-cols-2">
+          {sub.billedBy === "PARTNER" ? (
+            <ActionForm action={packageAction} submit={sub.package === "SIGNATURES" ? "Move to the full plan" : "Back to free signatures only"} variant="secondary">
+              <>
+                <input type="hidden" name="organisationId" value={organisationId} />
+                <input type="hidden" name="package" value={sub.package === "SIGNATURES" ? "FULL" : "SIGNATURES"} />
+                <p className="text-callout text-ink-muted">Normally the partner changes this through the API. Change it here only when they ask you to.</p>
+              </>
+            </ActionForm>
+          ) : null}
           {sub.status === "TRIALING" || sub.status === "FREE" ? (
             <ActionForm action={extendTrialAction} submit="Extend trial" variant="secondary">
               <>

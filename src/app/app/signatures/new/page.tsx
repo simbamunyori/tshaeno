@@ -1,5 +1,6 @@
 import { Code2, ImagePlus, LayoutTemplate } from "lucide-react";
 import Link from "next/link";
+import { orgAccess } from "@/server/billing/premium";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Card } from "@/components/ui/card";
@@ -60,7 +61,7 @@ export default async function NewSignaturePage({ searchParams }: { searchParams:
         </form>
       </div>
 
-      {aiAvailable() ? (
+      {aiAvailable() && (await orgAccess(organisation.id)).premium ? (
         <Card>
           <div className="mb-4 flex flex-col gap-1">
             <h2 className="text-headline text-ink">Or describe it, and Claude drafts it</h2>

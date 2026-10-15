@@ -177,6 +177,17 @@ export async function setCustomPrice(staff: StaffMember, organisationId: string,
   }, db);
 }
 
+/** Free signatures only, or the full plan, for an organisation billed by a partner. */
+export async function setPackage(staff: StaffMember, organisationId: string, pkg: "SIGNATURES" | "FULL", ipAddress?: string | null, db?: PrismaClient) {
+  assertStaff(staff);
+  await asSystem(async (tx) => {
+    const sub = await subscriptionOf(tx, organisationId);
+    if (sub.billedBy !== "PARTNER") throw new DomainError("conflict", "Only organisations billed by a partner have a package. The others get premium features with a trial or a paid plan.");
+    await tx.subscription.update({ where: { id: sub.id }, data: { package: pkg } });
+    await platformAudit(tx, staff, "platform.package_set", organisationId, { package: pkg }, ipAddress);
+  }, db);
+}
+
 // ─── Getting started ───────────────────────────────────────────────
 
 export interface OnboardingStats {

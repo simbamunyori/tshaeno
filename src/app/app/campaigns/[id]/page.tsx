@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { orgAccess } from "@/server/billing/premium";
 import { ActionForm } from "@/components/ui/action-form";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,7 @@ export default async function CampaignPage({ params, searchParams }: { params: P
   const { id } = await params;
   const { created } = await searchParams;
   const { actor, organisation } = await requireMember();
+  if (!(await orgAccess(organisation.id)).premium) redirect("/app/campaigns");
   const { report, options } = await asTenant(organisation.id, async (tx) => ({
     report: (await campaignReports(tx)).find((r) => r.campaign.id === id),
     options: await targetOptions(tx),

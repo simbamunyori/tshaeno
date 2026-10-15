@@ -110,6 +110,17 @@ Tshaeno is priced per person per month, in bands:
 
 A person is someone in the organisation's directory, usually synced from Google Workspace or Microsoft 365, whether or not they ever sign in to Tshaeno.
 
+### Packages
+
+Every organisation also has a `package`:
+
+| `package` | What it includes |
+| --- | --- |
+| `signatures` | Email signatures for everyone: templates, brand kits, directory sync, Gmail and Outlook, signature rules and disclaimers. Free for your hosting customers. |
+| `full` | Everything in `signatures`, plus campaigns, reports, help from Claude, meeting backgrounds and out-of-office messages. Billed at the plan's price. |
+
+New organisations start on `signatures` unless you say otherwise. When a customer upgrades, send `PATCH` with `{ "package": "full" }`. Their admins see which package they have under Plan and billing, and the premium pages ask them to upgrade through you.
+
 ## Endpoints
 
 `{reference}` is your own id for the customer, the one you sent when you set it up.
@@ -123,6 +134,7 @@ A person is someone in the organisation's directory, usually synced from Google 
   "reference": "cust-42",
   "name": "Kgale Hill Traders",
   "plan": "GROWTH",
+  "package": "signatures",
   "seats": 20,
   "currency": "BWP",
   "owner": { "name": "Tumelo Sello", "email": "tumelo@kgale.co.bw" }
@@ -131,6 +143,7 @@ A person is someone in the organisation's directory, usually synced from Google 
 
 - `seats` is the number of people the customer pays you for.
 - `plan` is optional. Leave it out and Tshaeno picks the band that fits `seats`.
+- `package` is `signatures` or `full`, and defaults to `signatures`.
 - `currency` is `BWP`, `ZAR` or `USD`, and defaults to `BWP`.
 
 The owner is emailed an invitation, valid for 7 days. They choose a password and set up an authenticator app. If they sign in to Tshaeno from the Fourth Generation console with the same address instead, they join straight away; see "Single sign-on" below.
@@ -143,6 +156,7 @@ The answer is `201`, with an organisation:
   "id": "cm…",
   "name": "Kgale Hill Traders",
   "plan": "GROWTH",
+  "package": "signatures",
   "seats": 20,
   "currency": "BWP",
   "status": "active",
@@ -157,9 +171,9 @@ The answer is `201`, with an organisation:
 
 `GET /organisations/{reference}`
 
-### Change the plan, seats or name
+### Change the plan, package, seats or name
 
-`PATCH /organisations/{reference}` with any of `{ "plan": "BUSINESS", "seats": 120, "name": "…" }`.
+`PATCH /organisations/{reference}` with any of `{ "plan": "BUSINESS", "package": "full", "seats": 120, "name": "…" }`.
 
 The change takes effect at once. Fewer seats than people already in the directory is refused with `409 too_few_seats`, and `details.people` says how many there are.
 
@@ -184,6 +198,7 @@ After cancelling, people can still sign in and look, but the directory stops syn
 {
   "reference": "cust-42",
   "plan": "GROWTH",
+  "package": "signatures",
   "seats": 20,
   "people": 18,
   "admins": 2,

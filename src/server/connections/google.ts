@@ -193,6 +193,29 @@ export class GoogleClient {
     });
   }
 
+  /**
+   * Turns on a person's Gmail vacation responder between two times, or off
+   * with null. Gmail switches it on and off by itself on those dates.
+   */
+  async setVacation(email: string, reply: { subject: string; html: string; startsAt: Date; endsAt: Date } | null): Promise<void> {
+    const body = reply
+      ? {
+          enableAutoReply: true,
+          responseSubject: reply.subject,
+          responseBodyHtml: reply.html,
+          restrictToContacts: false,
+          restrictToDomain: false,
+          startTime: String(reply.startsAt.getTime()),
+          endTime: String(reply.endsAt.getTime()),
+        }
+      : { enableAutoReply: false };
+    await this.call(email, GOOGLE_SCOPES.gmail, `${this.endpoints.gmail}/gmail/v1/users/me/settings/vacation`, {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  }
+
   // ─── Health ───────────────────────────────────────────────────────
 
   async health(admin: string): Promise<HealthItem[]> {

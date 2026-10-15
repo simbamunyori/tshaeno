@@ -36,6 +36,8 @@ export class FakeGoogle {
   admins = new Set(["admin@kalahari.example"]);
   /** Signatures set, by email. */
   signatures = new Map<string, string>();
+  /** Vacation responders set, by email. */
+  vacations = new Map<string, Record<string, unknown>>();
   /** Make the next n signature updates fail with this status. */
   failNext: { count: number; status: number; message: string } | null = null;
   pageSize = 2;
@@ -66,6 +68,11 @@ export class FakeGoogle {
       }
       if (url.pathname.endsWith("/users")) return page(this.users, "users");
       if (url.pathname.endsWith("/groups")) return page(this.groups.map((g) => ({ email: g.email, name: g.name })), "groups");
+    }
+    if (url.pathname === "/gmail/v1/users/me/settings/vacation" && init?.method === "PUT") {
+      const body = JSON.parse(String(init.body)) as Record<string, unknown>;
+      this.vacations.set(who.sub, body);
+      return json(200, body);
     }
     const send = /^\/gmail\/v1\/users\/me\/settings\/sendAs(?:\/([^/]+))?$/.exec(url.pathname);
     if (send) {
@@ -131,7 +138,9 @@ export class FakeMicrosoft {
   signInTenant = TENANT;
   groups: { id: string; displayName: string; members: string[] }[] = [];
   consented = new Set<string>([TENANT]);
-  permissions = new Set(["User.Read.All", "GroupMember.Read.All"]);
+  permissions = new Set(["User.Read.All", "GroupMember.Read.All", "MailboxSettings.ReadWrite"]);
+  /** Automatic replies set, by the address in the request. */
+  autoReplies = new Map<string, Record<string, unknown>>();
   pageSize = 2;
 
   fetch: typeof fetch = async (input, init) => {
@@ -158,6 +167,13 @@ export class FakeMicrosoft {
     };
     const denied = () => json(403, { error: { code: "Authorization_RequestDenied", message: "Insufficient privileges to complete the operation." } });
     if (path === "/users") return this.permissions.has("User.Read.All") ? page(this.users) : denied();
+    const box = /^\/users\/([^/]+)\/mailboxSettings$/.exec(path);
+    if (box && init?.method === "PATCH") {
+      if (!this.permissions.has("MailboxSettings.ReadWrite")) return denied();
+      const body = JSON.parse(String(init.body)) as { automaticRepliesSetting: Record<string, unknown> };
+      this.autoReplies.set(decodeURIComponent(box[1]), body.automaticRepliesSetting);
+      return json(200, body);
+    }
     if (path === "/groups") return this.permissions.has("GroupMember.Read.All") ? page(this.groups.map((g) => ({ id: g.id, displayName: g.displayName }))) : denied();
     const m = /^\/groups\/([^/]+)\/transitiveMembers\/microsoft\.graph\.user$/.exec(path);
     if (m) return page((this.groups.find((g) => g.id === m[1])?.members ?? []).map((id) => ({ id })));

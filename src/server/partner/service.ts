@@ -37,6 +37,8 @@ export interface PartnerOrganisation {
   id: string;
   name: string;
   plan: PlanTier;
+  /** "signatures" is free email signatures; "full" adds campaigns and the other premium features. */
+  package: "signatures" | "full";
   seats: number;
   currency: string;
   status: "active" | "suspended" | "cancelled";
@@ -53,6 +55,7 @@ function view(org: OrgWithPlan): PartnerOrganisation {
     id: org.id,
     name: org.name,
     plan: org.subscription?.tier ?? "STARTER",
+    package: org.subscription?.package === "SIGNATURES" ? "signatures" : "full",
     seats: org.subscription?.seats ?? 0,
     currency: org.subscription?.currency ?? "USD",
     status: suspended ? "suspended" : org.subscription?.status === "CANCELLED" ? "cancelled" : "active",
@@ -97,12 +100,16 @@ const activePeople = (tx: Tx, organisationId: string) => tx.person.count({ where
 const plan = z.enum(TIERS as unknown as [PlanTier, ...PlanTier[]]);
 const seats = z.number().int().min(1).max(1_000_000);
 const currency = z.enum(CURRENCIES as unknown as ["BWP", "ZAR", "USD"]);
+const pkg = z.enum(["signatures", "full"]);
+const PACKAGE = { signatures: "SIGNATURES", full: "FULL" } as const;
 
 const ProvisionInput = z
   .object({
     reference: z.string().trim().min(1).max(100),
     name: z.string().trim().min(2).max(120),
     plan: plan.optional(),
+    /** Hosting customers get free signatures unless the partner sells them the full plan. */
+    package: pkg.default("signatures"),
     seats,
     currency: currency.default("BWP"),
     owner: z.object({ name: z.string().trim().min(1).max(80), email: z.string().trim().toLowerCase().email() }),
@@ -132,6 +139,7 @@ export async function provision(db: PrismaClient | undefined, partner: Partner, 
         organisationId: org.id,
         status: "ACTIVE",
         billedBy: "PARTNER",
+        package: PACKAGE[input.package],
         tier: input.plan ?? tierFor(input.seats),
         seats: input.seats,
         currency: input.currency,
@@ -152,6 +160,7 @@ export async function provision(db: PrismaClient | undefined, partner: Partner, 
     await tx.outboundEmail.create({ data: { kind: "invitation", toAddress: input.owner.email, payload: { invitationId: invitation.id } } });
     await orgAudit(tx, org.id, partner, "organisation.provisioned", {
       plan: input.plan ?? tierFor(input.seats),
+      package: input.package,
       seats: input.seats,
       currency: input.currency,
       owner: { name: input.owner.name, email: input.owner.email },
@@ -164,7 +173,7 @@ export async function getOrganisation(db: PrismaClient | undefined, partner: Par
   return asSystem(async (tx) => view(await findOrg(tx, partner, reference)), db);
 }
 
-const UpdateInput = z.object({ name: z.string().trim().min(2).max(120).optional(), plan: plan.optional(), seats: seats.optional() }).strict();
+const UpdateInput = z.object({ name: z.string().trim().min(2).max(120).optional(), plan: plan.optional(), package: pkg.optional(), seats: seats.optional() }).strict();
 
 /** A new plan, a new number of seats, or a new name. Fewer seats than people already in the directory is refused. */
 export async function updateOrganisation(db: PrismaClient | undefined, partner: Partner, reference: string, body: unknown) {
@@ -179,15 +188,20 @@ export async function updateOrganisation(db: PrismaClient | undefined, partner: 
       }
     }
     if (input.name && input.name !== org.name) await tx.organisation.update({ where: { id: org.id }, data: { name: input.name } });
-    if (input.plan !== undefined || input.seats !== undefined) {
+    if (input.plan !== undefined || input.seats !== undefined || input.package !== undefined) {
       await tx.subscription.update({
         where: { id: sub.id },
-        data: { ...(input.plan ? { tier: input.plan } : {}), ...(input.seats !== undefined ? { seats: input.seats } : {}) },
+        data: {
+          ...(input.plan ? { tier: input.plan } : {}),
+          ...(input.seats !== undefined ? { seats: input.seats } : {}),
+          ...(input.package ? { package: PACKAGE[input.package] } : {}),
+        },
       });
     }
+    const was = sub.package === "SIGNATURES" ? "signatures" : "full";
     await orgAudit(tx, org.id, partner, "organisation.changed_by_partner", {
-      from: { name: org.name, plan: sub.tier, seats: sub.seats },
-      to: { name: input.name ?? org.name, plan: input.plan ?? sub.tier, seats: input.seats ?? sub.seats },
+      from: { name: org.name, plan: sub.tier, package: was, seats: sub.seats },
+      to: { name: input.name ?? org.name, plan: input.plan ?? sub.tier, package: input.package ?? was, seats: input.seats ?? sub.seats },
     });
     return reread(tx, org.id);
   }, db);
@@ -266,6 +280,7 @@ export async function organisationUsage(db: PrismaClient | undefined, partner: P
     return {
       reference,
       plan: org.subscription?.tier ?? "STARTER",
+      package: org.subscription?.package === "SIGNATURES" ? "signatures" : "full",
       seats: org.subscription?.seats ?? 0,
       people,
       admins: members,

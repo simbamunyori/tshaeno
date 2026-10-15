@@ -100,7 +100,7 @@ describe.skipIf(!dbUrl)("partner API", async () => {
     const res = await orgs.POST(request("POST", "/api/partner/v1/organisations", provisionBody, { idem }));
     expect(res.status).toBe(201);
     const body = await res.json();
-    expect(body).toMatchObject({ reference: ref, plan: "GROWTH", seats: 20, currency: "BWP", status: "active", suspendedBy: null });
+    expect(body).toMatchObject({ reference: ref, plan: "GROWTH", package: "signatures", seats: 20, currency: "BWP", status: "active", suspendedBy: null });
 
     const org = await orgRow();
     expect(org.subscription).toMatchObject({ status: "ACTIVE", billedBy: "PARTNER", tier: "GROWTH", seats: 20, trialEndsAt: null });
@@ -140,8 +140,8 @@ describe.skipIf(!dbUrl)("partner API", async () => {
     const tooFew = await one.PATCH(request("PATCH", `/api/partner/v1/organisations/${ref}`, { seats: 2 }), params());
     expect(tooFew.status).toBe(409);
     expect(await tooFew.json()).toMatchObject({ error: { code: "too_few_seats", details: { people: 3 } } });
-    const ok = await one.PATCH(request("PATCH", `/api/partner/v1/organisations/${ref}`, { plan: "STARTER", seats: 5, name: `Kgale Hill ${t}` }), params());
-    expect(await ok.json()).toMatchObject({ plan: "STARTER", seats: 5, name: `Kgale Hill ${t}` });
+    const ok = await one.PATCH(request("PATCH", `/api/partner/v1/organisations/${ref}`, { plan: "STARTER", package: "full", seats: 5, name: `Kgale Hill ${t}` }), params());
+    expect(await ok.json()).toMatchObject({ plan: "STARTER", package: "full", seats: 5, name: `Kgale Hill ${t}` });
     const unknown = await one.PATCH(request("PATCH", `/api/partner/v1/organisations/${ref}`, { owner: "x" }), params());
     expect(unknown.status).toBe(422);
   });
@@ -149,7 +149,7 @@ describe.skipIf(!dbUrl)("partner API", async () => {
   it("reports usage without names or addresses", async () => {
     const res = await usageRoute.GET(request("GET", `/api/partner/v1/organisations/${ref}/usage`, undefined, { idem: null }), params());
     const usage = await res.json();
-    expect(usage).toMatchObject({ reference: ref, plan: "STARTER", seats: 5, people: 3, admins: 0, connected: [], outlookAddIn: false, peopleWithSignature: 0 });
+    expect(usage).toMatchObject({ reference: ref, plan: "STARTER", package: "full", seats: 5, people: 3, admins: 0, connected: [], outlookAddIn: false, peopleWithSignature: 0 });
     expect(JSON.stringify(usage)).not.toContain("@");
   });
 

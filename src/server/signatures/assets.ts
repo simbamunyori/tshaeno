@@ -18,6 +18,7 @@ const LIMITS: Record<AssetKind, { width: number; height: number; square?: boolea
   PHOTO: { width: 320, height: 320, square: true },
   BANNER: { width: 1200, height: 600 },
   IMAGE: { width: 1200, height: 1200 },
+  BACKDROP: { width: 1920, height: 1080 },
 };
 
 export interface ProcessedImage {

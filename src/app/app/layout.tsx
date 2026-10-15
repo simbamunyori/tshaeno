@@ -7,6 +7,7 @@ import { UserCard } from "@/components/app/user-card";
 import { PlanBanner } from "@/components/app/plan-banner";
 import { Logo } from "@/components/ui/logo";
 import { organisationsFor } from "@/server/auth/service";
+import { orgAccess } from "@/server/billing/premium";
 import { prisma } from "@/server/db";
 import { ROLE_LABEL } from "@/server/org/access";
 import { requireMember } from "@/server/org/context";
@@ -15,6 +16,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const { actor, organisation, session } = await requireMember();
   const memberships = await organisationsFor(prisma, actor.userId);
   const staff = session.user.isPlatformAdmin;
+  const locked = !(await orgAccess(organisation.id)).premium;
   const org = (up?: boolean) => (
     <OrgSwitcher
       up={up}
@@ -37,7 +39,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <Logo />
         </Link>
         {org()}
-        <SidebarNav staff={staff} />
+        <SidebarNav staff={staff} locked={locked} />
         <div className="mt-auto">{user}</div>
       </aside>
       <header className="print:hidden sticky top-0 z-10 flex h-14 items-center justify-between border-b border-border bg-surface-1 px-4 lg:hidden">
@@ -46,6 +48,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </Link>
         <MobileNav
           staff={staff}
+          locked={locked}
           header={<Logo size={26} />}
           footer={
             <div className="flex flex-col gap-4">

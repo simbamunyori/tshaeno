@@ -5,7 +5,7 @@ import { requestContext } from "@/server/auth/next";
 import { DomainError } from "@/server/org/access";
 import type { FormState } from "@/components/ui/action-form";
 import { CURRENCIES, TIERS, parseMoney, type Currency, type PlanTier } from "@/lib/billing/plans";
-import { extendTrial, recordBankPayment, setCustomPrice, setOrganisationStatus, setPrice, voidInvoice } from "@/server/platform/service";
+import { extendTrial, recordBankPayment, setCustomPrice, setOrganisationStatus, setPackage, setPrice, voidInvoice } from "@/server/platform/service";
 import { requireStaff } from "./staff";
 
 export interface StatusState {
@@ -98,4 +98,16 @@ export async function customPriceAction(_prev: FormState, form: FormData): Promi
   }
   revalidatePath(`/admin/organisations/${s(form, "organisationId")}`);
   return { ok: minor == null ? "They use the price list again." : "Saved. Their next invoice uses this price." };
+}
+
+export async function packageAction(_prev: FormState, form: FormData): Promise<FormState> {
+  const staff = await requireStaff();
+  const pkg = s(form, "package") === "FULL" ? "FULL" : "SIGNATURES";
+  try {
+    await setPackage(staff, s(form, "organisationId"), pkg, (await requestContext()).ipAddress);
+  } catch (e) {
+    return failure(e);
+  }
+  revalidatePath(`/admin/organisations/${s(form, "organisationId")}`);
+  return { ok: pkg === "FULL" ? "Moved to the full plan." : "Back to free signatures only." };
 }

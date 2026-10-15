@@ -70,6 +70,8 @@ model Organisation {
   portalLinks    PortalLink[]
   campaigns      Campaign[]
   campaignClicks CampaignClick[]
+  backgrounds    MeetingBackground[]
+  awayMessages   AwayMessage[]
   partner        Partner?              @relation(fields: [partnerId], references: [id], onDelete: Restrict)
 
   @@unique([partnerId, partnerReference])
@@ -369,6 +371,7 @@ model Person {
   assignments  SignatureAssignment[]
   deliveries   SignatureDelivery[]
   portalLinks  PortalLink[]
+  awayMessages AwayMessage[]
 
   @@unique([organisationId, email])
   @@index([organisationId, department])
@@ -396,6 +399,8 @@ enum AssetKind {
   PHOTO
   BANNER
   IMAGE
+  /// A full HD picture behind a meeting background.
+  BACKDROP
 }
 
 /// An uploaded image. Served publicly at /i/a/<id>, because email
@@ -412,10 +417,11 @@ model Asset {
   bytes          Bytes
   createdAt      DateTime  @default(now())
 
-  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  organisation Organisation        @relation(fields: [organisationId], references: [id], onDelete: Cascade)
   people       Person[]
   brandKits    BrandKit[]
   campaigns    Campaign[]
+  backgrounds  MeetingBackground[]
 
   @@index([organisationId, kind])
 }
@@ -434,6 +440,7 @@ model BrandKit {
   organisation Organisation        @relation(fields: [organisationId], references: [id], onDelete: Cascade)
   logo         Asset?              @relation(fields: [logoAssetId], references: [id], onDelete: SetNull)
   templates    SignatureTemplate[]
+  backgrounds  MeetingBackground[]
 
   @@index([organisationId])
 }
@@ -654,6 +661,14 @@ enum SubscriptionStatus {
   CANCELLED
 }
 
+/// What the organisation can use. Fourth Generation hosting customers get
+/// SIGNATURES free; campaigns, reports, Claude, meeting backgrounds and
+/// out-of-office messages need FULL.
+enum PlanPackage {
+  SIGNATURES
+  FULL
+}
+
 enum BilledBy {
   DIRECT
   /// Billed on a partner's invoice, such as Fourth Generation's (S5).
@@ -681,6 +696,7 @@ model Subscription {
   organisationId  String             @unique
   status          SubscriptionStatus @default(TRIALING)
   billedBy        BilledBy           @default(DIRECT)
+  package         PlanPackage        @default(FULL)
   tier            PlanTier           @default(STARTER)
   interval        BillingInterval    @default(MONTHLY)
   currency        Currency           @default(USD)
@@ -906,4 +922,66 @@ model DemoRequest {
 
   @@index([createdAt])
   @@index([email, createdAt])
+}
+
+/// A branded background for Zoom, Teams and Meet. Each person gets their
+/// own copy with their name and title, drawn in the browser.
+model MeetingBackground {
+  id             String   @id @default(cuid())
+  organisationId String
+  name           String
+  /// panel, light, band or photo.
+  style          String   @default("panel")
+  colour         String   @default("#14213D")
+  /// The logo comes from this brand kit, or the default kit when unset.
+  brandKitId     String?
+  /// The company's own picture, for the photo style.
+  imageAssetId   String?
+  showName       Boolean  @default(true)
+  showTitle      Boolean  @default(true)
+  /// Shown to people on their own page, ready to download.
+  published      Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  brandKit     BrandKit?    @relation(fields: [brandKitId], references: [id], onDelete: SetNull)
+  image        Asset?       @relation(fields: [imageAssetId], references: [id], onDelete: SetNull)
+
+  @@index([organisationId])
+}
+
+enum AwayStatus {
+  /// Saved, but Tshaeno can't set it in this person's mailbox.
+  SAVED
+  /// Set in Gmail or Outlook, switching itself on and off on the dates.
+  SET
+  FAILED
+  CANCELLED
+}
+
+/// An out-of-office reply an admin set for someone, with their dates.
+model AwayMessage {
+  id             String     @id @default(cuid())
+  organisationId String
+  personId       String
+  reason         String
+  startsAt       DateTime
+  endsAt         DateTime
+  subject        String
+  message        String
+  /// Adds the person's email signature under the message.
+  withSignature  Boolean    @default(true)
+  status         AwayStatus @default(SAVED)
+  /// Gmail or Outlook, once set.
+  mailbox        String?
+  lastError      String?
+  setBy          String
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  organisation Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  person       Person       @relation(fields: [personId], references: [id], onDelete: Cascade)
+
+  @@index([organisationId, personId])
 }

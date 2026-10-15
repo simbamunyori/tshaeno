@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import { z } from "zod";
+import { requirePremium } from "@/server/billing/premium";
 import { docSchema } from "@/lib/signature/doc";
 import { checkBrand, type BrandFinding } from "@/lib/signature/brand-check";
 import { FIELDS } from "@/lib/signature/fields";
@@ -59,7 +60,14 @@ export async function draftTemplate(ctx: Ctx, input: { description: string; bran
   const description = input.description.trim();
   if (description.length < 10) throw new DomainError("invalid", "Say a little more about the signature you want.", "description");
   if (description.length > 1500) throw new DomainError("invalid", "Keep the description under 1,500 characters.", "description");
-  const brand = await asTenant(ctx.organisationId, async (tx) => toBrandData(await kitFor(tx, ctx.organisationId, input.brandKitId), ""), ctx.db);
+  const brand = await asTenant(
+    ctx.organisationId,
+    async (tx) => {
+      await requirePremium(tx, ctx.organisationId, "claude");
+      return toBrandData(await kitFor(tx, ctx.organisationId, input.brandKitId), "");
+    },
+    ctx.db,
+  );
   const prompt = [
     `The brand: ${brand.company || "an organisation"}.`,
     `Colours: primary ${brand.colours.primary}, secondary ${brand.colours.secondary}, text ${brand.colours.text}, muted ${brand.colours.muted}. Font: ${brand.font}.`,
@@ -91,6 +99,7 @@ export async function reviewBrand(ctx: Ctx, c: Claude | null = claude()): Promis
   const data = await asTenant(
     ctx.organisationId,
     async (tx) => {
+      await requirePremium(tx, ctx.organisationId, "claude");
       const templates = await tx.signatureTemplate.findMany({ where: { archivedAt: null, publishedVersionId: { not: null } }, include: { published: true } });
       return Promise.all(
         templates

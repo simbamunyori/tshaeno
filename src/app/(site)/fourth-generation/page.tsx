@@ -28,7 +28,9 @@ const FREE = [
 const PAID = [
   "Campaign banners under every signature",
   "Click reports by campaign and team",
-  "Different signatures by team, office or audience",
+  "Meeting backgrounds for everyone",
+  "Out-of-office replies set for people",
+  "Signature drafts and brand reviews by Claude",
 ];
 
 export default function FourthGenerationPage() {

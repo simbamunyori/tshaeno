@@ -618,3 +618,34 @@ export async function requestQuote(ctx: Ctx, input: { people: number; note: stri
     ctx.db,
   );
 }
+
+/**
+ * Asks Tshaeno to move the organisation to the full plan. For partner-billed
+ * organisations the partner then changes it, so it reaches sales like a quote.
+ */
+export async function requestUpgrade(ctx: Ctx, feature: string, now = new Date()) {
+  assertCan(ctx.actor, "manageBilling");
+  await asTenant(
+    ctx.organisationId,
+    async (tx) => {
+      const recent = await tx.auditLog.findFirst({ where: { action: "billing.upgrade_requested", createdAt: { gt: new Date(now.getTime() - DAY) } }, select: { id: true } });
+      if (recent) throw new DomainError("conflict", "We already have your request from today. We'll be in touch.");
+      const org = await tx.organisation.findUniqueOrThrow({ where: { id: ctx.organisationId }, select: { name: true } });
+      const sub = await subscriptionOf(tx, ctx.organisationId);
+      const user = await tx.membership.findFirst({ where: { id: ctx.actor.membershipId }, include: { user: { select: { email: true } } } });
+      const sales = env().SALES_EMAIL;
+      const note = `Wants the full plan, starting with ${feature.toLowerCase()}.${sub.billedBy === "PARTNER" ? " Billed by Fourth Generation, so they need to change the package." : ""}`;
+      if (sales) {
+        await tx.outboundEmail.create({
+          data: {
+            kind: "quote_request",
+            toAddress: sales,
+            payload: { organisationId: ctx.organisationId, organisation: org.name, name: ctx.actor.name, email: user?.user.email ?? "", people: String(await activePeople(tx)), note },
+          },
+        });
+      }
+      await audit(tx, ctx.organisationId, who(ctx.actor), "billing.upgrade_requested", { type: "Organisation", id: ctx.organisationId }, { feature }, ctx.ipAddress);
+    },
+    ctx.db,
+  );
+}

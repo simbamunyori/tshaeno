@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { UpgradePanel } from "@/components/app/upgrade-panel";
+import { orgAccess } from "@/server/billing/premium";
 import { ActionForm } from "@/components/ui/action-form";
 import { Card, CardHeader } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
@@ -18,6 +20,15 @@ export const metadata: Metadata = { title: "Campaigns" };
 
 export default async function CampaignsPage() {
   const { actor, organisation } = await requireMember();
+  const plan = await orgAccess(organisation.id);
+  if (!plan.premium) {
+    return (
+      <div className="flex flex-col gap-8">
+        <PageHeader eyebrow={organisation.name} title="Campaigns" />
+        <UpgradePanel feature="campaigns" partner={plan.partner} canBill={can(actor, "manageBilling")} />
+      </div>
+    );
+  }
   const { reports, options } = await asTenant(organisation.id, async (tx) => ({ reports: await campaignReports(tx), options: await targetOptions(tx) }));
   const day = new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeZone: organisation.timeZone });
   const manage = can(actor, "manageTemplates");
