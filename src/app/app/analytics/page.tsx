@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { UpgradePanel } from "@/components/app/upgrade-panel";
+import { orgAccess } from "@/server/billing/premium";
 import { notFound } from "next/navigation";
 import { Alert } from "@/components/ui/alert";
 import { Card, CardHeader } from "@/components/ui/card";
@@ -27,6 +29,15 @@ const pct = (n: number, of: number) => (of ? `${Math.round((n / of) * 100)}%` : 
 export default async function AnalyticsPage({ searchParams }: { searchParams: Promise<{ detail?: string }> }) {
   const { actor, organisation } = await requireMember();
   if (!can(actor, "viewAnalytics")) notFound();
+  const plan = await orgAccess(organisation.id);
+  if (!plan.premium) {
+    return (
+      <div className="flex flex-col gap-8">
+        <PageHeader eyebrow={organisation.name} title="Reports" />
+        <UpgradePanel feature="reports" partner={plan.partner} canBill={can(actor, "manageBilling")} />
+      </div>
+    );
+  }
   const a = await asTenant(organisation.id, (tx) => analytics(tx, organisation.id, origin()));
   const detailed = a.detailed || (await searchParams).detail === "1";
   const grade = GRADE[a.health.grade];

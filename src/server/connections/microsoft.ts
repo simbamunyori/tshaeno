@@ -175,7 +175,19 @@ export class MicrosoftClient {
 
   private async get(pathOrUrl: string): Promise<unknown> {
     const url = pathOrUrl.startsWith("http") ? pathOrUrl : `${this.endpoints.graph}/v1.0${pathOrUrl}`;
-    const res = await request(this.f, url, { headers: { authorization: `Bearer ${await this.token()}`, ConsistencyLevel: "eventual" } });
+    return this.answer(await request(this.f, url, { headers: { authorization: `Bearer ${await this.token()}`, ConsistencyLevel: "eventual" } }));
+  }
+
+  private async patch(path: string, body: unknown): Promise<unknown> {
+    const res = await request(this.f, `${this.endpoints.graph}/v1.0${path}`, {
+      method: "PATCH",
+      headers: { authorization: `Bearer ${await this.token()}`, "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    return this.answer(res);
+  }
+
+  private answer(res: Awaited<ReturnType<typeof request>>): unknown {
     if (res.status >= 200 && res.status < 300) return res.body;
     const message = (res.body as { error?: { message?: string } } | null)?.error?.message ?? `HTTP ${res.status}`;
     if (res.status === 403) {
@@ -184,6 +196,19 @@ export class MicrosoftClient {
     if (res.status === 429) throw new ProviderError("rate-limited", "Microsoft asked us to slow down. It will be tried again.", res.status, res.text);
     if (res.status >= 500) throw new ProviderError("unavailable", "Microsoft had a problem on its side. It will be tried again.", res.status, res.text);
     throw new ProviderError(kindForStatus(res.status), `Microsoft said: ${message}`, res.status, res.text);
+  }
+
+  /**
+   * Schedules a person's Outlook automatic replies between two times, or
+   * turns them off with null. Needs the MailboxSettings.ReadWrite permission.
+   */
+  async setAutoReply(email: string, reply: { html: string; startsAt: Date; endsAt: Date } | null): Promise<void> {
+    const at = (d: Date) => ({ dateTime: d.toISOString().replace(/Z$/, ""), timeZone: "UTC" });
+    await this.patch(`/users/${encodeURIComponent(email)}/mailboxSettings`, {
+      automaticRepliesSetting: reply
+        ? { status: "scheduled", externalAudience: "all", internalReplyMessage: reply.html, externalReplyMessage: reply.html, scheduledStartDateTime: at(reply.startsAt), scheduledEndDateTime: at(reply.endsAt) }
+        : { status: "disabled" },
+    });
   }
 
   private async all<T>(path: string): Promise<T[]> {

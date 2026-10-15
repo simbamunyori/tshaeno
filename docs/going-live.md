@@ -184,6 +184,11 @@ organizational directory). Under **Authentication**, add the Web redirect
 URI `https://app.tshaeno.com/connect/microsoft/callback`. Under **API
 permissions**, **Add a permission**, **Microsoft Graph**, **Application
 permissions**, and add **User.Read.All** and **GroupMember.Read.All**.
+Add **MailboxSettings.ReadWrite** too, so admins can set out-of-office
+replies from the console. A customer who connected before this was added
+opens the consent link from Connections again to grant it. Google needs
+nothing extra: out-of-office uses the same Gmail settings scope as
+signatures.
 Don't grant consent for your own tenant unless you want to connect it;
 each customer's admin grants it from the consent link. For a separate
 app, fill in `MICROSOFT_DIRECTORY_CLIENT_ID` and

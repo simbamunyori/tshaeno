@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { SidebarNav } from "./sidebar-nav";
 
 /** The sidebar as a sheet on narrow screens. */
-export function MobileNav({ header, footer, staff }: { header: React.ReactNode; footer: React.ReactNode; staff?: boolean }) {
+export function MobileNav({ header, footer, staff, locked }: { header: React.ReactNode; footer: React.ReactNode; staff?: boolean; locked?: boolean }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
@@ -48,7 +48,7 @@ export function MobileNav({ header, footer, staff }: { header: React.ReactNode; 
               <X aria-hidden className="size-5" />
             </button>
           </div>
-          <SidebarNav onNavigate={() => setOpen(false)} staff={staff} />
+          <SidebarNav onNavigate={() => setOpen(false)} staff={staff} locked={locked} />
           <div className="mt-auto">{footer}</div>
         </div>
       </dialog>

@@ -1,8 +1,9 @@
 "use client";
 
-import { BarChart3, Contact, CreditCard, Rocket, Gauge, LayoutGrid, Megaphone, Palette, PenLine, Plug, ScrollText, Settings, ShieldCheck, UsersRound, Wrench } from "lucide-react";
+import { BarChart3, Contact, CreditCard, Rocket, Gauge, LayoutGrid, Lock, Megaphone, MonitorPlay, Palette, PenLine, Plane, Plug, ScrollText, Settings, ShieldCheck, UsersRound, Wrench } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { PREMIUM_NAV } from "@/lib/billing/features";
 import { cn } from "@/lib/cn";
 
 export const NAV = [
@@ -13,6 +14,8 @@ export const NAV = [
   { href: "/app/people", label: "People", icon: Contact },
   { href: "/app/coverage", label: "Coverage", icon: Gauge },
   { href: "/app/campaigns", label: "Campaigns", icon: Megaphone },
+  { href: "/app/backgrounds", label: "Meeting backgrounds", icon: MonitorPlay },
+  { href: "/app/away", label: "Out-of-office", icon: Plane },
   { href: "/app/analytics", label: "Reports", icon: BarChart3 },
   { href: "/app/connections", label: "Connections", icon: Plug },
   { href: "/app/team", label: "Team", icon: UsersRound },
@@ -22,8 +25,8 @@ export const NAV = [
   { href: "/app/settings/security", label: "Your security", icon: ShieldCheck },
 ];
 
-/** `staff` adds the platform admin area for Tshaeno staff. */
-export function SidebarNav({ onNavigate, staff }: { onNavigate?: () => void; staff?: boolean }) {
+/** `staff` adds the platform admin area for Tshaeno staff. `locked` marks premium pages on free signatures. */
+export function SidebarNav({ onNavigate, staff, locked }: { onNavigate?: () => void; staff?: boolean; locked?: boolean }) {
   const pathname = usePathname();
   const items = staff ? [...NAV, { href: "/admin", label: "Platform admin", icon: Wrench, exact: false }] : NAV;
   return (
@@ -43,6 +46,7 @@ export function SidebarNav({ onNavigate, staff }: { onNavigate?: () => void; sta
           >
             <Icon aria-hidden className="size-[18px]" strokeWidth={active ? 2 : 1.75} />
             <span className="flex-1">{label}</span>
+            {locked && PREMIUM_NAV[href] ? <Lock aria-label="Full plan" className="size-3.5 text-ink-muted" /> : null}
           </Link>
         );
       })}
