@@ -2,7 +2,7 @@ import { Check } from "lucide-react";
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import Link from "next/link";
-import { Section } from "@/components/site/section";
+import { Display, Eyebrow, Section } from "@/components/site/section";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 import {
@@ -33,7 +33,7 @@ const PAID: PlanTier[] = ["STARTER", "GROWTH", "BUSINESS"];
 const INCLUDED = [
   "Gmail and Outlook, on every device",
   "Directory sync with Google and Microsoft",
-  "Every template, and the studio",
+  "Every template, plus your own logo, graphics and HTML",
   "Signatures by department, office or group",
   "Campaign banners and click reports",
   "Drafting and brand checks with Claude",
@@ -60,12 +60,13 @@ export default async function PricingPage({ searchParams }: { searchParams: Prom
 
   return (
     <>
-      <Section className="pt-10 pb-10 sm:pt-16 sm:pb-12">
-        <div className="flex max-w-[720px] flex-col gap-3">
-          <h1 className="text-[34px] leading-[40px] font-bold tracking-[-0.03em] text-ink sm:text-[44px] sm:leading-[50px]">Simple pricing, per person</h1>
-          <p className="text-[17px] leading-7 text-ink-muted">
-            Every plan has every feature. You pay for the people in your directory, and the price per person drops as you grow. Start with {TRIAL_DAYS} days of
-            everything, no card needed.
+      <Section className="pt-14 pb-10 sm:pt-20 sm:pb-12">
+        <div className="flex max-w-[760px] flex-col gap-5">
+          <Eyebrow>Pricing</Eyebrow>
+          <Display as="h1">One price per person. Every feature on every plan.</Display>
+          <p className="text-[18px] leading-[30px] text-ink-muted">
+            You pay for the people in your directory, and the price per person drops as you grow. Try everything for {TRIAL_DAYS} days first. We don&apos;t ask for a
+            card.
           </p>
         </div>
         <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
@@ -92,9 +93,9 @@ export default async function PricingPage({ searchParams }: { searchParams: Prom
 
       <Section className="pt-0 sm:pt-0">
         <ul className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <li className="flex flex-col gap-4 rounded-lg border border-border bg-surface-1 p-6">
+          <li className="flex flex-col gap-4 rounded-xl border border-border bg-surface-1 p-6">
             <div>
-              <h2 className="text-headline text-ink">Free</h2>
+              <h2 className="font-display text-[28px] leading-8 text-ink">Free</h2>
               <p className="text-callout text-ink-muted">Up to {FREE_PEOPLE} people</p>
             </div>
             <p className="text-[32px] leading-[38px] font-bold tracking-[-0.02em] text-ink">{formatMoney(0, currency)}</p>
@@ -109,9 +110,9 @@ export default async function PricingPage({ searchParams }: { searchParams: Prom
             return (
               <li key={t} className={cn("flex flex-col gap-4 rounded-lg border bg-surface-1 p-6", t === "GROWTH" ? "border-brand ring-1 ring-brand" : "border-border")}>
                 <div>
-                  <h2 className="flex items-center justify-between gap-2 text-headline text-ink">
+                  <h2 className="flex items-center justify-between gap-2 font-display text-[28px] leading-8 text-ink">
                     {TIER_LABEL[t]}
-                    {t === "GROWTH" ? <span className="rounded-full bg-brand-soft px-2 py-0.5 text-caption font-semibold text-link">Most teams</span> : null}
+                    {t === "GROWTH" ? <span className="rounded-full bg-brand-soft px-2 py-0.5 font-sans text-caption font-semibold text-link">Most teams</span> : null}
                   </h2>
                   <p className="text-callout text-ink-muted">{rangeLabel(t)}</p>
                 </div>
@@ -125,7 +126,7 @@ export default async function PricingPage({ searchParams }: { searchParams: Prom
                 )}
                 <p className="text-callout text-ink-muted">No Tshaeno link in signatures.</p>
                 <Button asChild variant={t === "GROWTH" ? "primary" : "secondary"} className="mt-auto">
-                  <Link href="/sign-up">Start the free trial</Link>
+                  <Link href="/sign-up">Start your free trial</Link>
                 </Button>
               </li>
             );
@@ -134,22 +135,29 @@ export default async function PricingPage({ searchParams }: { searchParams: Prom
 
         <div className="mt-4 flex flex-col gap-4 rounded-lg border border-border bg-surface-1 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-headline text-ink">{TIER_LABEL.ENTERPRISE}</h2>
-            <p className="text-callout text-ink-muted">For {rangeLabel("ENTERPRISE")}, priced by quote, with invoicing to suit your finance team.</p>
+            <h2 className="font-display text-[28px] leading-8 text-ink">{TIER_LABEL.ENTERPRISE}</h2>
+            <p className="text-callout text-ink-muted">For {rangeLabel("ENTERPRISE")}. Priced by quote, with invoicing that suits your finance team and a person who knows your account.</p>
           </div>
-          <Button asChild variant="secondary">
-            {sales ? <a href={`mailto:${sales}?subject=${encodeURIComponent("Tshaeno Enterprise")}`}>Ask for a quote</a> : <Link href="/sign-up">Start, then ask for a quote</Link>}
-          </Button>
+          <div className="flex flex-wrap gap-3">
+            <Button asChild>
+              <Link href="/demo">Talk to us</Link>
+            </Button>
+            {sales ? (
+              <Button asChild variant="secondary">
+                <a href={`mailto:${sales}?subject=${encodeURIComponent("Tshaeno Enterprise")}`}>Email for a quote</a>
+              </Button>
+            ) : null}
+          </div>
         </div>
       </Section>
 
       <Section className="bg-surface-1" inner="grid gap-10 lg:grid-cols-2">
         <div>
-          <h2 className="mb-5 text-title-2 text-ink">Every plan includes</h2>
+          <h2 className="mb-6 font-display text-[34px] leading-10 text-ink">Every plan includes</h2>
           <ul className="flex flex-col gap-3">
             {INCLUDED.map((i) => (
               <li key={i} className="flex gap-3 text-body text-ink">
-                <Check aria-hidden className="mt-1 size-4 shrink-0 text-positive" />
+                <Check aria-hidden className="mt-1 size-4 shrink-0 text-accent" strokeWidth={2.5} />
                 {i}
               </li>
             ))}
@@ -159,8 +167,8 @@ export default async function PricingPage({ searchParams }: { searchParams: Prom
       </Section>
 
       <Section aria-labelledby="faq" inner="max-w-[760px]">
-        <h2 id="faq" className="mb-6 text-title-2 text-ink">
-          Questions
+        <h2 id="faq" className="mb-8 font-display text-[40px] leading-[44px] text-ink">
+          Questions people ask
         </h2>
         <dl className="flex flex-col divide-y divide-border border-y border-border">
           {[

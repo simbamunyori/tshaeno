@@ -54,7 +54,7 @@ export default async function PortalProfile() {
           <Card>
             <CardHeader title="Your photo">Shown in signatures that include one. A square crop is made around the face.</CardHeader>
             <ActionForm action={photoAction} submit="Upload photo" pending="Uploading…">
-              <ActionFileField id="file" label="Photo" hint="PNG, JPEG or GIF, up to 5 MB." accept="image/png,image/jpeg,image/gif" />
+              <ActionFileField id="file" label="Photo" hint="PNG, JPEG or GIF, up to 5 MB." accept="image/png,image/jpeg,image/gif,image/webp" />
             </ActionForm>
             {s.person.photoAssetId ? (
               <ActionForm action={photoAction} submit="Remove my photo" variant="secondary" pending="Removing…" className="mt-4">

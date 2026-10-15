@@ -90,7 +90,7 @@ export function KitEditor({ id, name: initialName, data, logo: initialLogo, orig
                   )}
                 </div>
                 <div className="flex flex-col gap-2">
-                  <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/gif" aria-label="Logo file" className="text-callout text-ink" onChange={() => uploadLogo(false)} />
+                  <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/gif,image/webp" aria-label="Logo file" className="text-callout text-ink" onChange={() => uploadLogo(false)} />
                   {logo ? (
                     <button type="button" onClick={() => uploadLogo(true)} className="self-start text-callout font-semibold text-negative hover:underline">
                       Remove logo

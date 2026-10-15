@@ -29,8 +29,8 @@ export function Estimator({ prices, currency, interval }: { prices: Price[]; cur
   }
 
   return (
-    <div className="flex flex-col gap-4 rounded-lg border border-border bg-surface-0 p-6">
-      <h2 className="text-title-2 text-ink">What would it cost us?</h2>
+    <div className="flex flex-col gap-4 rounded-xl border border-border bg-surface-0 p-6 sm:p-8">
+      <h2 className="font-display text-[30px] leading-9 text-ink">What would it cost us?</h2>
       <label htmlFor={id} className="text-callout font-semibold text-ink">
         People who send email
       </label>

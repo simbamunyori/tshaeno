@@ -1,52 +1,60 @@
 import Link from "next/link";
-import { Logo } from "@/components/ui/logo";
+import { Wordmark } from "@/components/ui/logo";
+
+const COLUMNS: { title: string; links: [string, string][] }[] = [
+  {
+    title: "Product",
+    links: [
+      ["Overview", "/#product"],
+      ["Templates", "/templates"],
+      ["Pricing", "/pricing"],
+      ["Book a demo", "/demo"],
+    ],
+  },
+  {
+    title: "Compare",
+    links: [
+      ["Tshaeno or built-in signatures", "/compare"],
+      ["Buying through Fourth Generation", "/fourth-generation"],
+    ],
+  },
+  {
+    title: "Your account",
+    links: [
+      ["Start a free trial", "/sign-up"],
+      ["Sign in", "/sign-in"],
+      ["Update your own photo and links", "/me"],
+    ],
+  },
+];
 
 export function SiteFooter() {
   return (
-    <footer className="border-t border-border bg-surface-1">
-      <div className="mx-auto grid max-w-[1120px] gap-10 px-4 py-12 sm:grid-cols-2 sm:px-6 lg:grid-cols-4">
-        <div className="flex flex-col gap-3">
-          <Logo size={26} />
-          <p className="text-callout text-ink-muted">Email signatures for everyone in your organisation, set in one place and kept up to date.</p>
-        </div>
-        <nav aria-label="Product" className="flex flex-col gap-2 text-callout">
-          <p className="font-semibold text-ink">Product</p>
-          <Link href="/" className="text-ink-muted hover:text-ink">
-            How it works
-          </Link>
-          <Link href="/templates" className="text-ink-muted hover:text-ink">
-            Templates
-          </Link>
-          <Link href="/pricing" className="text-ink-muted hover:text-ink">
-            Pricing
-          </Link>
-          <Link href="/compare" className="text-ink-muted hover:text-ink">
-            Tshaeno or built-in signatures
-          </Link>
-        </nav>
-        <nav aria-label="Account" className="flex flex-col gap-2 text-callout">
-          <p className="font-semibold text-ink">Your account</p>
-          <Link href="/sign-up" className="text-ink-muted hover:text-ink">
-            Start free
-          </Link>
-          <Link href="/sign-in" className="text-ink-muted hover:text-ink">
-            Sign in
-          </Link>
-          <Link href="/me" className="text-ink-muted hover:text-ink">
-            Change your own photo and links
-          </Link>
-        </nav>
-        <div className="flex flex-col gap-2 text-callout">
-          <p className="font-semibold text-ink">Buying through Fourth Generation</p>
-          <p className="text-ink-muted">
-            Tshaeno is also sold by Fourth Generation Technologies, on the same invoice as your other services.{" "}
-            <Link href="/fourth-generation" className="font-semibold text-link hover:underline">
-              How it works
-            </Link>
+    <footer className="bg-[#0E1424] text-white">
+      <div className="mx-auto grid max-w-[1200px] gap-12 px-4 pt-20 pb-12 sm:px-6 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+        <div className="flex flex-col gap-5">
+          <Wordmark height={44} className="text-[#E3C893]" />
+          <p className="max-w-[320px] text-[14px] leading-6 text-white/65">
+            Email signatures for organisations that care how they come across. Set once, kept right, on every email.
           </p>
         </div>
+        {COLUMNS.map((c) => (
+          <nav key={c.title} aria-label={c.title} className="flex flex-col gap-3 text-[14px]">
+            <p className="mb-1 text-[12px] font-semibold tracking-[0.14em] text-white/50 uppercase">{c.title}</p>
+            {c.links.map(([label, href]) => (
+              <Link key={href} href={href} className="text-white/80 transition-colors hover:text-white">
+                {label}
+              </Link>
+            ))}
+          </nav>
+        ))}
       </div>
-      <div className="mx-auto max-w-[1120px] px-4 pb-8 text-caption text-ink-muted sm:px-6">© {new Date().getFullYear()} Tshaeno</div>
+      <div className="mx-auto max-w-[1200px] px-4 sm:px-6">
+        <div className="flex flex-col gap-2 border-t border-white/10 py-8 text-[13px] text-white/50 sm:flex-row sm:justify-between">
+          <p>© {new Date().getFullYear()} Tshaeno. All rights reserved.</p>
+          <p>Also sold by Fourth Generation Technologies, on the invoice you already get.</p>
+        </div>
+      </div>
     </footer>
   );
 }

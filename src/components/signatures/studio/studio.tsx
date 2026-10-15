@@ -212,7 +212,7 @@ export function Studio(props: StudioProps) {
   const inspectorPanel = selectedBlock ? (
     <Inspector
       block={selectedBlock}
-      colours={kit?.brand.colours ?? { primary: "#0B7F78", secondary: "#2EC4B6", text: "#0B1F3A", muted: "#5A6472" }}
+      colours={kit?.brand.colours ?? { primary: "#14213D", secondary: "#C8A96A", text: "#11182B", muted: "#5B6070" }}
       customFields={props.customFields}
       assets={assets}
       readOnly={readOnly}

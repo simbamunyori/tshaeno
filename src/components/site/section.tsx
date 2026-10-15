@@ -3,24 +3,37 @@ import { cn } from "@/lib/cn";
 /** A full-width band of the website with a centred column. */
 export function Section({ className, inner, children, ...props }: React.HTMLAttributes<HTMLElement> & { inner?: string }) {
   return (
-    <section className={cn("px-4 py-16 sm:px-6 sm:py-24", className)} {...props}>
-      <div className={cn("mx-auto max-w-[1120px]", inner)}>{children}</div>
+    <section className={cn("px-4 py-20 sm:px-6 sm:py-28", className)} {...props}>
+      <div className={cn("mx-auto max-w-[1200px]", inner)}>{children}</div>
     </section>
   );
 }
 
-export function Eyebrow({ children }: { children: React.ReactNode }) {
-  return <p className="text-callout font-semibold tracking-wide text-link uppercase">{children}</p>;
+/** A short label above a heading, with a small rule in the accent colour. */
+export function Eyebrow({ children, className }: { children: React.ReactNode; className?: string }) {
+  return (
+    <p className={cn("flex items-center gap-3 text-[12px] leading-4 font-semibold tracking-[0.16em] text-ink-muted uppercase", className)}>
+      <span aria-hidden className="h-px w-8 bg-accent" />
+      {children}
+    </p>
+  );
 }
 
-export function SectionTitle({ eyebrow, title, children, id }: { eyebrow?: string; title: string; children?: React.ReactNode; id?: string }) {
+/** The large serif heading used across the website. */
+export function Display({ as: Tag = "h2", className, children, id }: { as?: "h1" | "h2" | "h3"; className?: string; children: React.ReactNode; id?: string }) {
   return (
-    <div className="mb-10 flex max-w-[680px] flex-col gap-3">
+    <Tag id={id} className={cn("font-display text-[40px] leading-[44px] font-normal tracking-[-0.01em] text-balance text-ink sm:text-[54px] sm:leading-[58px]", className)}>
+      {children}
+    </Tag>
+  );
+}
+
+export function SectionTitle({ eyebrow, title, children, id, className }: { eyebrow?: string; title: React.ReactNode; children?: React.ReactNode; id?: string; className?: string }) {
+  return (
+    <div className={cn("mb-12 flex max-w-[720px] flex-col gap-5 sm:mb-16", className)}>
       {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-      <h2 id={id} className="text-[28px] leading-[34px] font-bold tracking-[-0.02em] text-ink text-balance sm:text-[36px] sm:leading-[42px]">
-        {title}
-      </h2>
-      {children ? <p className="text-[17px] leading-7 text-ink-muted">{children}</p> : null}
+      <Display id={id}>{title}</Display>
+      {children ? <p className="max-w-[600px] text-[18px] leading-[30px] text-ink-muted">{children}</p> : null}
     </div>
   );
 }

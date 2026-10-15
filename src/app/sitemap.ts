@@ -6,6 +6,6 @@ export const dynamic = "force-dynamic";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const o = origin();
-  const pages = ["", "/templates", "/pricing", "/compare", "/fourth-generation", "/sign-up"];
+  const pages = ["", "/templates", "/pricing", "/compare", "/fourth-generation", "/demo", "/sign-up"];
   return [...pages.map((p) => ({ url: `${o}${p}` })), ...STARTERS.map((s) => ({ url: `${o}/templates/${s.key}` }))];
 }

@@ -80,8 +80,8 @@ describe("renderSignature", () => {
 
   it("scales images to their real shape", () => {
     const { html } = renderSignature(doc, ctx(FULL_BRAND, FULL_PERSON));
-    // 600 x 160 logo at 100 wide is 27 high.
-    expect(html).toMatch(/logo\.png" width="100" height="27"/);
+    // 600 x 160 logo at 150 wide is 40 high.
+    expect(html).toMatch(/logo\.png" width="150" height="40"/);
   });
 
   it("escapes people's details and refuses unsafe links", () => {

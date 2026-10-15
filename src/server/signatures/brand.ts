@@ -16,7 +16,7 @@ import { imageRef, processImage, saveAsset } from "./assets";
 
 export const SOCIALS: SocialNetwork[] = ["linkedin", "x", "facebook", "instagram", "youtube", "tiktok", "github", "whatsapp", "threads"];
 
-const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Use a colour like #0B7F78.");
+const hex = z.string().regex(/^#[0-9a-fA-F]{6}$/, "Use a colour like #14213D.");
 
 export const brandKitDataSchema = z.object({
   colours: z.object({ primary: hex, secondary: hex, text: hex, muted: hex }),
@@ -47,7 +47,7 @@ export type BrandKitData = z.infer<typeof brandKitDataSchema>;
 
 export function defaultKitData(company: string): BrandKitData {
   return {
-    colours: { primary: "#0B7F78", secondary: "#2EC4B6", text: "#0B1F3A", muted: "#5A6472" },
+    colours: { primary: "#14213D", secondary: "#C8A96A", text: "#11182B", muted: "#5B6070" },
     font: "arial",
     company,
     website: "",

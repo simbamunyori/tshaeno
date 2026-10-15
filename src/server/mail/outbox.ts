@@ -5,7 +5,7 @@ import { issueEmailToken, newLinkToken } from "@/server/auth/service";
 import { ROLE_LABEL } from "@/server/org/access";
 import { formatMoney } from "@/lib/billing/plans";
 import { issueLinkToken } from "@/server/portal/service";
-import { invitation, invoiceIssued, paymentReceived, portalLink, quoteRequest, trialEnding, verifyEmail, type Rendered } from "./templates";
+import { demoRequest, invitation, invoiceIssued, paymentReceived, portalLink, quoteRequest, trialEnding, verifyEmail, type Rendered } from "./templates";
 import { send, type Message } from "./transport";
 
 export const MAX_ATTEMPTS = 5;
@@ -83,6 +83,9 @@ export async function render(db: PrismaClient, row: OutboundEmail): Promise<Rend
   }
   if (row.kind === "quote_request") {
     return quoteRequest({ organisation: payload.organisation, name: payload.name, email: payload.email, people: payload.people, note: payload.note ?? "", url: `${base}/admin/organisations/${payload.organisationId}` });
+  }
+  if (row.kind === "demo_request") {
+    return demoRequest({ name: payload.name, email: payload.email, company: payload.company, people: payload.people, phone: payload.phone ?? "", message: payload.message ?? "", url: `${base}/admin` });
   }
   throw new Error(`Unknown email kind ${row.kind}.`);
 }
